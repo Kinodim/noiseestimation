@@ -10,7 +10,7 @@ dt = 0.1
 measurement_std_max = 4
 measurement_std = np.arange(0, measurement_std_max, .02)
 measurement_std = np.concatenate( (measurement_std, list(reversed(measurement_std)) ))
-sim = SensorSim(measurement_std, timestep=dt, velocity = (0.5, 1))
+sim = SensorSim((0,0), (0.5,1), measurement_std, 2, timestep=dt)
 
 # set up kalman filter
 tracker = KalmanFilter(dim_x=4, dim_z=2)

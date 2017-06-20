@@ -8,7 +8,7 @@ from sensorsim import SensorSim
 
 measurement_std = np.arange(0, 4, .02)
 measurement_std = np.concatenate( (measurement_std, list(reversed(measurement_std)) ))
-sim = SensorSim(measurement_std, velocity = (0.5, 1))
+sim = SensorSim(position=(0,0), velocity=(0.5,1), measurement_std=measurement_std, dim=2)
 
 readings = np.array([np.array(sim.read()) for _ in measurement_std ])
 
