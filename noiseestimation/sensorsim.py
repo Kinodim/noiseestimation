@@ -1,3 +1,4 @@
+import numpy as np
 from numpy.random import randn
 
 class SensorSim:
@@ -21,7 +22,7 @@ class SensorSim:
 
     def read(self):
         """
-        returns both the simulated sensor reading and the actual state
+        returns both the simulated sensor reading and the actual state as ndarray
         """
         self.counter += 1
         if self.counter >= len(self.measurement_std):
@@ -30,6 +31,15 @@ class SensorSim:
         self.position[0] += self.velocity[0]
         self.position[1] += self.velocity[1]
 
-        return ([ self.position[0] + randn() * self.measurement_std[self.counter],
-                 self.position[1] + randn() * self.measurement_std[self.counter] ],
-                 [self.position[0], self.position[1]])
+        measurement = np.asarray([ self.position[0] + randn() * self.measurement_std[self.counter],
+                 self.position[1] + randn() * self.measurement_std[self.counter] ]).reshape(2,1)
+        truth = np.asarray(self.position).reshape(2,1)
+        return measurement, truth
+
+
+    def batch_read(self):
+        """
+        returns all available data
+        """
+        batch = np.asarray([ self.read() for _ in self.measurement_std ])
+        return batch
