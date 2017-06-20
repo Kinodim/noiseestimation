@@ -34,7 +34,7 @@ class SensorSim:
 
         self.position += self.velocity
         measurement = self.position + self.measurement_std[self.counter] * randn(self.dim, 1)
-        return measurement, self.position
+        return measurement, np.array(self.position) # copy position
 
 
     def batch_read(self):
