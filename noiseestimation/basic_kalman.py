@@ -19,6 +19,7 @@ tracker.F = np.array([[1, dt, 0,  0],
 q = Q_discrete_white_noise(dim=2, dt=dt, var=0.001)
 tracker.Q = block_diag(q,q)
 tracker.H = np.array([[1, 0, 0, 0],
+                      [0, 0, 1, 0]])
 tracker.R = np.diag([measurement_std_max, measurement_std_max])
 tracker.x = np.array([[0, 0, 0, 0]]).T
 tracker.P = np.eye(4) * 500
