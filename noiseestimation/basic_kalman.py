@@ -27,7 +27,7 @@ tracker.x = np.array([[0, 0, 0, 0]]).T
 tracker.P = np.eye(4) * 500
 
 # perform sensor simulation and filtering
-sensor_out = np.array([ np.array(sim.read()) for _ in measurement_std ])
+sensor_out = sim.batch_read()
 readings = sensor_out[:,0].reshape(-1,2,1)
 truth = sensor_out[:,1].reshape(-1,2,1)
 
