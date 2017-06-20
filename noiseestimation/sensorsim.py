@@ -17,6 +17,8 @@ class SensorSim:
             timestep = 0.1):
         self.position = [ position[0], position[1] ] # needs to be mutable
         self.velocity = velocity
+        if not hasattr(measurement_std, '__iter__'):
+            raise ValueError("The measurement noise std argument needs to be iterable")
         self.measurement_std = measurement_std
         self.counter = -1
 

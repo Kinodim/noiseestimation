@@ -8,8 +8,12 @@ class TestSensorSim:
         self.measurement_std = [1, 2, 3]
         self.sim = SensorSim(self.measurement_std)
 
-    def constructor_test(self):
+    def basic_constructor_test(self):
         pass
+
+    @raises(ValueError)
+    def constructor_argument_check_test(self):
+        sim = SensorSim(4)
 
     def read_all_test(self):
         for x in self.measurement_std:
