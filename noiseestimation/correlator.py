@@ -33,12 +33,13 @@ class Correlator:
         limit = 1.96 / sqrt(len(self.values))
         outliers = 0
         rho = self.autocorrelation()
-        for elem in rho:
+        for elem in rho[1:]:
             if -limit <= elem <= limit:
                 continue
             else:
                 outliers += 1
 
-        if outliers / len(rho) >= 0.05:
+        print float(outliers) / (len(rho) - 1)
+        if float(outliers) / (len(rho) - 1) >= 0.05:
             return False
         return True
