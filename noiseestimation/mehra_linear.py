@@ -23,22 +23,34 @@ tracker.x = np.array([[0, 0]]).T
 tracker.P = np.eye(2) * 500
 
 # perform sensor simulation and filtering
-sensor_out = sim.batch_read()
-readings = sensor_out[:,0].reshape(-1,1,1)
-truth = sensor_out[:,1].reshape(-1,1,1)
+readings = []
+truths = []
+mu = []
+residuals = []
+for _ in measurement_std_list:
+    reading, truth = sim.read()
+    readings.extend(reading.flatten())
+    truths.extend(truth.flatten())
+    tracker.predict()
+    tracker.update(reading)
+    mu.extend(tracker.x[0])
+    residuals.extend(tracker.y[0])
 
-mu, cov, _, _ = tracker.batch_filter(readings)
-error = np.square(truth[:,0] - mu[:,0])
+error = np.asarray(truths) - mu
 
 # plot results
-f, axarr = plt.subplots(2)
-axarr[0].plot(readings[:,0], 'go', label="Measurements")
-axarr[0].plot(mu[:,0], 'm', linewidth=3, label="Filter")
+f, axarr = plt.subplots(3,sharex=True)
+axarr[0].plot(readings, 'go', label="Measurements")
+axarr[0].plot(mu, 'm', linewidth=3, label="Filter")
 axarr[0].legend(loc="lower right")
 # axarr[0].set_xlim([0,200])
 axarr[0].set_title("Kalman filtering of position")
 
-axarr[1].plot(error[:,0], 'r')
+axarr[1].plot(error, 'r')
 axarr[1].set_title("Estimation error")
 
+axarr[2].plot(residuals, 'b')
+axarr[2].set_title("Residuals")
+
+plt.xlabel("Sample")
 plt.show()
