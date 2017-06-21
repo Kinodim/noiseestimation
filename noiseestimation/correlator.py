@@ -15,3 +15,8 @@ class Correlator:
             C.append(c)
         return C
 
+    def autocorrelation(self):
+        C = self.covariance()
+        rho = [c / C[0] for c in C]
+        return rho
+
