@@ -22,6 +22,12 @@ class TestCorrelator:
         assert rho[0] == 1
         assert rho[1] == 2. / 3
         assert rho[2] == 1. / 6
+
+    def test_isWhite(self):
+        notwhite = Correlator([5]*100, 50)
+        assert notwhite.isWhite() == False
+        white = Correlator([0,0,1,0,0], 4)
+        assert white.isWhite() == True
         
         # arr = [1, 1, 2, 2, 3, 3, -1, -2, -5, 10]
         # self.cor = Correlator(arr, 5)
