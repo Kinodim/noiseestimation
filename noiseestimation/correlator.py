@@ -2,6 +2,14 @@ from math import sqrt
 import numpy as np
 
 class Correlator:
+    """
+    Provides functionality related to the autocorrelation coefficients
+    of a sequence of values. More specifically, it calculates whether
+    this sequence is some white noise using its estimated autocorrelation
+    and the times they exceed the 95% confidence interval.
+    Adapted from: On the Identification of Variances and Adaptive
+    Kalman Filtering, Mehra 1970
+    """
     def __init__(self, values, max_lag):
         self.values = values
         self.max_lag = max_lag
