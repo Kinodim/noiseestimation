@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.random import randn
+import numpy.random as rnd
 
 class SensorSim:
     """
@@ -33,7 +33,7 @@ class SensorSim:
             raise IndexError('No more measurement std data available')
 
         self.position += self.velocity
-        measurement = self.position + self.measurement_std[self.counter] * randn(self.dim, 1)
+        measurement = self.position + self.measurement_std[self.counter] * rnd.randn(self.dim, 1)
         return measurement, np.array(self.position) # copy position
 
 

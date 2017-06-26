@@ -75,7 +75,7 @@ def run_tracker():
     print "Relative error: %.3f %%" % (rel_err * 100)
     return rel_err
 
-if(__name__ == "__main__"):
+if __name__ == "__main__":
     sum = .0
     runs = 100
     for i in range(runs):
