@@ -27,12 +27,11 @@ def estimate_noise(C_arr, K, F, H):
     N = len(C_arr)
     # construct matrix A
     A = np.ndarray((0, H.shape[0], F.shape[1]))
+    inner_expression = np.identity(F.shape[1]) - np.dot(K,H)
+    inner_expression = np.dot(F,inner_expression)
+    inner_bracket = np.identity(H.shape[1])
     for n in range(N):
-        inner_expression = np.identity(F.shape[1]) - np.dot(K,H)
-        inner_expression = np.dot(F,inner_expression)
-        inner_bracket = np.identity(H.shape[1])
-        # TODO: Optimization possible, reuse inner bracket
-        for i in range(n):
+        if n != 0:
             inner_bracket = np.dot(inner_bracket, inner_expression)
         entry = np.dot(H, inner_bracket)
         entry = np.dot(entry, F)
