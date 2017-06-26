@@ -2,14 +2,23 @@ import numpy as np
 import numpy.random as rnd
 
 class SensorSim:
-    """
-    This class provides simulated sensor readings
+    """This class provides simulated sensor readings
 
-    Given the initial position and velocity together with an array
-    containing the time progression of the measurement noise,
-    the read function will output the simulated measurements until
-    no more data on its variance is available
+    Given the initial position and velocity of an object together with
+    an array containing the time progression of the measurement noise,
+    this class will simulate the sensor readings for this objects
+    position.
+
+    Args:
+        position (tuple): Initial object position
+        velocity (tuple): Object velocity
+        measurement_std (list): Measurement standard deviation for
+            all desired timesteps
+        dim (int): Filter dimension
+        timestep: The discrete timestep between two updates
+
     """
+
     def __init__(self, 
             position,
             velocity,
@@ -25,8 +34,21 @@ class SensorSim:
         self.counter = -1
 
     def read(self):
-        """
-        returns both the simulated sensor reading and the actual state as ndarray
+        """Returns a single sensor reading
+
+        Returns the current sensor reading corrupted by noise with the
+        standard deviation specified in measurement_std as well as the
+        true position. This will lead to an error if the end of this
+        array is reached.
+
+        Returns:
+            tuple: 2-element tuple containing:
+                - ndarray: Simulated sensor reading
+                - ndarray: True object position
+
+        Raises:
+            IndexError: The end of the measurement_std list has been reached
+        
         """
         self.counter += 1
         if self.counter >= len(self.measurement_std):
@@ -38,8 +60,15 @@ class SensorSim:
 
 
     def batch_read(self):
-        """
-        returns all available data
+        """Returns all the available data
+
+        Returns all the sensor readings and true positions for all the
+        entries in the measurement_std list.
+
+        Returns:
+            tuple: 2-element tuple containing:
+                - ndarray: Simulated sensor readings
+                - ndarray: True object positions
         """
         batch = np.asarray([ self.read() for _ in self.measurement_std ])
         return batch
