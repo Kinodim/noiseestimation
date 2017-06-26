@@ -5,7 +5,7 @@ from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
 from sensorsim import SensorSim
 from correlator import Correlator
-from noiseestimator import NoiseEstimator
+from noiseestimator import estimate_noise
 from math import fabs
 
 
@@ -65,7 +65,7 @@ def run_tracker():
     # plt.show()
 
     cor = Correlator(residuals)
-    R = NoiseEstimator.estimate(cor.covariance(100), tracker.K, tracker.F, tracker.H)
+    R = estimate_noise(cor.covariance(100), tracker.K, tracker.F, tracker.H)
     abs_err = measurement_std**2 - R
     rel_err = abs_err / measurement_std**2
     print "True: %.3f" % measurement_std**2
