@@ -8,9 +8,11 @@ from sensorsim import SensorSim
 def run_tracker():
     # set up sensor simulator
     dt = 0.1
-    measurement_std_max = 4
+
+    measurement_std_max = 6
     measurement_std = np.arange(0, measurement_std_max, .02)
     measurement_std = np.concatenate( (measurement_std, list(reversed(measurement_std)) ))
+    # measurement_std = [measurement_std_max] * 400;
     sim = SensorSim((0,0), (0.5,1), measurement_std, 2, timestep=dt)
 
     # set up kalman filter

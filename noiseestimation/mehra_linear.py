@@ -13,7 +13,7 @@ def run_tracker():
     # set up sensor simulator
     dt = 0.1
     measurement_std = 3.5
-    measurement_std_list = np.asarray([measurement_std] * 200)
+    measurement_std_list = np.asarray([measurement_std] * 100)
     sim = SensorSim(0, 0.1, measurement_std_list, 1, timestep=dt)
 
     # set up kalman filter
@@ -48,7 +48,7 @@ def run_tracker():
     # axarr[0].plot(readings, 'go', label="Measurements")
     # axarr[0].plot(mu, 'm', linewidth=3, label="Filter")
     # axarr[0].legend(loc="lower right")
-    # # axarr[0].set_xlim([0,200])
+    # axarr[0].set_xlim([0,200])
     # axarr[0].set_title("Kalman filtering of position")
 
     # axarr[1].plot(error, 'r')
@@ -65,7 +65,7 @@ def run_tracker():
     # plt.show()
 
     cor = Correlator(residuals)
-    R = estimate_noise(cor.covariance(100), tracker.K, tracker.F, tracker.H)
+    R = estimate_noise(cor.covariance(50), tracker.K, tracker.F, tracker.H)
     abs_err = measurement_std**2 - R
     rel_err = abs_err / measurement_std**2
     print "True: %.3f" % measurement_std**2
@@ -73,13 +73,14 @@ def run_tracker():
     print "Estimated: %.3f" % R
     print "Absolute error: %.3f" % abs_err
     print "Relative error: %.3f %%" % (rel_err * 100)
+    print "-" * 15
     return rel_err
 
 if __name__ == "__main__":
     sum = .0
     runs = 100
     for i in range(runs):
-        sum += fabs(run_tracker())
-        # print "-" * 15
         print "%d / %d" % (i+1, runs)
+        sum += fabs(run_tracker())
+
     print "Avg relative error: %.3f %%" % (sum * 100 / runs)
