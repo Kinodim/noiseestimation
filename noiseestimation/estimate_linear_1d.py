@@ -8,12 +8,37 @@ from correlator import Correlator
 from noiseestimator import estimate_noise, estimate_noise_approx
 from math import fabs
 
+def plot_results(readings, mu, error, residuals):
+    f, axarr = plt.subplots(3,sharex=True)
+    axarr[0].plot(readings, 'go', label="Measurements")
+    axarr[0].plot(mu, 'm', linewidth=3, label="Filter")
+    axarr[0].legend(loc="lower right")
+    axarr[0].set_xlim([0,100])
+    axarr[0].set_title("Kalman filtering of position")
+
+    axarr[1].plot(error, 'r')
+    axarr[1].set_title("Estimation error")
+
+    axarr[2].plot(residuals, 'b')
+    axarr[2].set_title("Residuals")
+
+    # cor = Correlator(residuals[-50:])
+    # print cor.isWhite()
+    # cor = Correlator(residuals)
+    # print cor.isWhite()
+
+    plt.show()
 
 def run_tracker():
+    # parameters
+    filter_misestimation_factor = 5.0;
+    sample_size = 100;
+    used_taps = int(sample_size * 0.5);
+    measurement_std = 3.5
+
     # set up sensor simulator
     dt = 0.1
-    measurement_std = 3.5
-    measurement_std_list = np.asarray([measurement_std] * 100)
+    measurement_std_list = np.asarray([measurement_std] * sample_size)
     sim = SensorSim(0, 0.1, measurement_std_list, 1, timestep=dt)
 
     # set up kalman filter
@@ -23,7 +48,7 @@ def run_tracker():
     q = Q_discrete_white_noise(dim=2, dt=dt, var=0.01)
     tracker.Q = q
     tracker.H = np.array([[1, 0]])
-    tracker.R = measurement_std**2 * 5
+    tracker.R = measurement_std**2 * filter_misestimation_factor
     tracker.x = np.array([[0, 0]]).T
     tracker.P = np.eye(2) * 500
 
@@ -43,30 +68,12 @@ def run_tracker():
 
     error = np.asarray(truths) - mu
 
-    # plot results
-    # f, axarr = plt.subplots(3,sharex=True)
-    # axarr[0].plot(readings, 'go', label="Measurements")
-    # axarr[0].plot(mu, 'm', linewidth=3, label="Filter")
-    # axarr[0].legend(loc="lower right")
-    # axarr[0].set_xlim([0,200])
-    # axarr[0].set_title("Kalman filtering of position")
+    # plot_results(readings, mu, error, residuals)
 
-    # axarr[1].plot(error, 'r')
-    # axarr[1].set_title("Estimation error")
-
-    # axarr[2].plot(residuals, 'b')
-    # axarr[2].set_title("Residuals")
-
-    # cor = Correlator(residuals[-50:])
-    # print cor.isWhite()
-    # cor = Correlator(residuals)
-    # print cor.isWhite()
-
-    # plt.show()
-
+    # perform estimation
     cor = Correlator(residuals)
-    R = estimate_noise(cor.covariance(50), tracker.K, tracker.F, tracker.H)
-    R_approx = estimate_noise_approx(cor.covariance(50)[0], tracker.H, tracker.P)
+    R = estimate_noise(cor.covariance(used_taps), tracker.K, tracker.F, tracker.H)
+    R_approx = estimate_noise_approx(cor.covariance(used_taps)[0], tracker.H, tracker.P)
     abs_err = measurement_std**2 - R
     rel_err = abs_err / measurement_std**2
     print "True: %.3f" % measurement_std**2
