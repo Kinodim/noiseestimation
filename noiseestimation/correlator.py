@@ -25,15 +25,15 @@ class Correlator:
         for k in range(lags + 1):
             c = .0
             for i in range(k, len(self.values)):
-                c += self.values[i] * self.values[i-k]
+                c += np.dot(self.values[i], np.transpose(self.values[i-k]))
             c /= len(self.values)
             C.append(c)
-        return C
+        return np.asarray(C)
 
     def autocorrelation(self, lags):
         C = self.covariance(lags)
         rho = [c / C[0] for c in C]
-        return rho
+        return np.asarray(rho)
 
     def isWhite(self, method = 'ljung-box', lags = 0):
         if method == 'mehra':
