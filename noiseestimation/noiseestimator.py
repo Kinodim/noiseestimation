@@ -13,7 +13,7 @@ def estimate_noise(C_arr, K, F, H):
     Filtering, Mehra 1970
 
     Args:
-        C_arr (list): The list of innovation covariance estimates
+        C_arr (ndarray): The list of innovation covariance estimates
         K (ndarray): Kalman gain
         F (ndarray): Update matrix
         H (ndarray): Measurement matrix
@@ -22,14 +22,15 @@ def estimate_noise(C_arr, K, F, H):
         ndarray: The estimated measurement noise covariance matrix
 
     """
-
-    C_arr = np.asarray(C_arr).reshape( (-1, H.shape[0]) )
     N = len(C_arr)
     # construct matrix A
-    A = np.ndarray((0, H.shape[0], F.shape[1]))
-    inner_expression = np.identity(F.shape[1]) - np.dot(K,H)
+    # Number of observations: H.shape[0]
+    # Number of states: F.shape[0]
+    A = np.ndarray((0, H.shape[0], F.shape[0]))
+    inner_expression = np.identity(F.shape[0]) - np.dot(K,H)
     inner_expression = np.dot(F,inner_expression)
-    inner_bracket = np.identity(H.shape[1])
+    inner_bracket = np.identity(F.shape[0])
+    #TODO change to mehra version: only up to N - 1
     for n in range(N):
         if n != 0:
             inner_bracket = np.dot(inner_bracket, inner_expression)
@@ -37,8 +38,9 @@ def estimate_noise(C_arr, K, F, H):
         entry = np.dot(entry, F)
         A = np.vstack( (A, [entry]) )
 
-    A = A.reshape( (-1, F.shape[1]))
-    MH = np.dot(K, C_arr[0,:,None]) + np.dot( pinv(A), C_arr)
+    A = A.reshape( (-1, F.shape[0]))
+    C_stacked = C_arr[0:].reshape( (-1, H.shape[0]))
+    MH = np.dot(K, C_arr[0]) + np.dot( pinv(A), C_stacked)
     R = C_arr[0] - np.dot(H, MH)
     return R
 

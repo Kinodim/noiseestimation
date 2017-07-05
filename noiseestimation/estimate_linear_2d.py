@@ -9,12 +9,47 @@ from noiseestimator import estimate_noise
 from math import fabs
 
 
+def plot_results(readings, mu, error):
+    # plot results
+    f, axarr = plt.subplots(2)
+    axarr[0].plot(readings[:,0], readings[:,1], 'go', label="Measurements")
+    axarr[0].plot(mu[:,0], mu[:,1], 'm', linewidth=3, label="Filter")
+    axarr[0].legend(loc="lower right")
+    # axarr[0].set_xlim([0,200])
+    axarr[0].set_title("Kalman filtering of position")
+
+    axarr[1].plot(error, 'r')
+    axarr[1].set_title("Estimation error")
+
+    plt.show()
+
+def perform_estimation(residuals, tracker):
+    # cor = Correlator(residuals[-50:])
+    # print cor.isWhite()
+    # cor = Correlator(residuals)
+    # print cor.isWhite()
+
+    cor = Correlator(residuals)
+    R = estimate_noise(cor.covariance(100), tracker.K, tracker.F, tracker.H)
+    print R
+    # abs_err = measurement_std**2 - R
+    # rel_err = abs_err / measurement_std**2
+    # print "True: %.3f" % measurement_std**2
+    # print "Filter: %.3f" % tracker.R
+    # print "Estimated: %.3f" % R
+    # print "Absolute error: %.3f" % abs_err
+    # print "Relative error: %.3f %%" % (rel_err * 100)
+    # print "-" * 15
+    # return rel_err
+
 def run_tracker():
+    # parameters
+    sample_size = 200
+
     # set up sensor simulator
     dt = 0.1
-
-    measurement_std = 1
-    measurement_std_list = np.asarray([measurement_std] * 200)
+    measurement_std = 2
+    measurement_std_list = np.asarray([measurement_std] * sample_size)
     sim = SensorSim((0,0), (0.5,1), measurement_std_list, 2, timestep=dt)
 
     # set up kalman filter
@@ -49,53 +84,13 @@ def run_tracker():
     readings = np.asarray(readings)
     mu = np.asarray(mu)
     truths = np.asarray(truths)
+    residuals = np.asarray(residuals)
     error = np.sqrt(np.sum(np.square(truths - mu), 1))
 
-    # plot results
-    f, axarr = plt.subplots(2)
-    axarr[0].plot(readings[:,0], readings[:,1], 'go', label="Measurements")
-    axarr[0].plot(mu[:,0], mu[:,1], 'm', linewidth=3, label="Filter")
-    axarr[0].legend(loc="lower right")
-    # axarr[0].set_xlim([0,200])
-    axarr[0].set_title("Kalman filtering of position")
+    # plot_results(readings, mu, error)
 
-    axarr[1].plot(error, 'r')
-    axarr[1].set_title("Estimation error")
-
-    plt.show()
-
-    # plot results
-    # f, axarr = plt.subplots(3,sharex=True)
-    # axarr[0].plot(readings, 'go', label="Measurements")
-    # axarr[0].plot(mu, 'm', linewidth=3, label="Filter")
-    # axarr[0].legend(loc="lower right")
-    # axarr[0].set_xlim([0,200])
-    # axarr[0].set_title("Kalman filtering of position")
-
-    # axarr[1].plot(error, 'r')
-    # axarr[1].set_title("Estimation error")
-
-    # axarr[2].plot(residuals, 'b')
-    # axarr[2].set_title("Residuals")
-
-    # cor = Correlator(residuals[-50:])
-    # print cor.isWhite()
-    # cor = Correlator(residuals)
-    # print cor.isWhite()
-
-    # plt.show()
-
-    # cor = Correlator(residuals)
-    # R = estimate_noise(cor.covariance(50), tracker.K, tracker.F, tracker.H)
-    # abs_err = measurement_std**2 - R
-    # rel_err = abs_err / measurement_std**2
-    # print "True: %.3f" % measurement_std**2
-    # print "Filter: %.3f" % tracker.R
-    # print "Estimated: %.3f" % R
-    # print "Absolute error: %.3f" % abs_err
-    # print "Relative error: %.3f %%" % (rel_err * 100)
-    # print "-" * 15
-    # return rel_err
+    rel_err = perform_estimation(residuals, tracker)
+    return rel_err
 
 if __name__ == "__main__":
     run_tracker()
