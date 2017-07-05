@@ -45,7 +45,7 @@ class Correlator:
         """Checks whether the passed sequence is white noise
 
         Args:
-            method (str, optional): Used statistical method to employ.
+            method (str, optional): Uses statistical method to employ.
                 Available options: "ljung-box" (default) and "mehra"
             lags (int): number of taps to use for autocorrelation
 
