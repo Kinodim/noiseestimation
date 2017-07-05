@@ -18,12 +18,16 @@ class Correlator:
     statsmodel package
     """
     def __init__(self, values):
-        self.values = values
+        self.values = np.asarray(values)
+        # convert to required format in case we receive simple list
+        # shape from (n,) to (n, 1, 1)
+        if len(self.values.shape) == 1:
+            self.values = self.values[:, np.newaxis, np.newaxis]
 
     def covariance(self, lags):
         C = []
         for k in range(lags + 1):
-            c = .0
+            c = np.zeros( (self.values.shape[1], self.values.shape[1]) )
             for i in range(k, len(self.values)):
                 c += np.dot(self.values[i], np.transpose(self.values[i-k]))
             c /= len(self.values)
@@ -32,15 +36,29 @@ class Correlator:
 
     def autocorrelation(self, lags):
         C = self.covariance(lags)
-        rho = [c / C[0] for c in C]
+        C_0_diagonals = np.diagonal(C[0]).reshape( (-1, 1) )
+        denominator = np.sqrt( np.dot(C_0_diagonals, np.transpose(C_0_diagonals) ) )
+        rho = [c / denominator for c in C]
         return np.asarray(rho)
 
     def isWhite(self, method = 'ljung-box', lags = 0):
+        """Checks whether the passed sequence is white noise
+
+        Args:
+            method (str, optional): Used statistical method to employ.
+                Available options: "ljung-box" (default) and "mehra"
+            lags (int): number of taps to use for autocorrelation
+
+        Returns:
+            bool: True if sequence is white
+        """
+        #TODO extend to multiple dimensions
         if method == 'mehra':
             limit = 1.96 / sqrt(len(self.values))
             outliers = 0
+
             if lags == 0:
-                lags = int(ceil(len(self.values) / 10.0))
+                lags = int(ceil(len(self.values) / 2.0))
             rho = self.autocorrelation(lags)
             for elem in rho[1:]:
                 if -limit <= elem <= limit:
