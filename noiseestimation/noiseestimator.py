@@ -23,14 +23,14 @@ def estimate_noise(C_arr, K, F, H):
 
     """
     N = len(C_arr)
+    num_observations = H.shape[0]
+    num_states = F.shape[0]
+
     # construct matrix A
-    # Number of observations: H.shape[0]
-    # Number of states: F.shape[0]
-    A = np.ndarray((0, H.shape[0], F.shape[0]))
-    inner_expression = np.identity(F.shape[0]) - np.dot(K,H)
+    A = np.ndarray((0, num_observations, num_states))
+    inner_expression = np.identity(num_states) - np.dot(K,H)
     inner_expression = np.dot(F,inner_expression)
-    inner_bracket = np.identity(F.shape[0])
-    #TODO change to mehra version: only up to N - 1
+    inner_bracket = np.identity(num_states)
     for n in range(N):
         if n != 0:
             inner_bracket = np.dot(inner_bracket, inner_expression)
@@ -38,8 +38,33 @@ def estimate_noise(C_arr, K, F, H):
         entry = np.dot(entry, F)
         A = np.vstack( (A, [entry]) )
 
-    A = A.reshape( (-1, F.shape[0]))
-    C_stacked = C_arr[0:].reshape( (-1, H.shape[0]))
+    A = A.reshape( (-1, num_states))
+    C_stacked = C_arr.reshape( (-1, num_observations))
+    MH = np.dot(K, C_arr[0]) + np.dot( pinv(A), C_stacked)
+    R = C_arr[0] - np.dot(H, MH)
+    return R
+
+def estimate_noise_mehra(C_arr, K, F, H):
+    """estimate using mehra version
+    """
+    N = len(C_arr)
+    num_observations = H.shape[0]
+    num_states = F.shape[0]
+
+    # construct matrix A
+    A = np.ndarray((0, num_observations, num_states))
+    inner_expression = np.identity(num_states) - np.dot(K,H)
+    inner_expression = np.dot(F,inner_expression)
+    inner_bracket = np.identity(num_states)
+    for n in range(N - 1):
+        if n != 0:
+            inner_bracket = np.dot(inner_bracket, inner_expression)
+        entry = np.dot(H, inner_bracket)
+        entry = np.dot(entry, F)
+        A = np.vstack( (A, [entry]) )
+
+    A = A.reshape( (-1, num_states))
+    C_stacked = C_arr[1:].reshape( (-1, num_observations))
     MH = np.dot(K, C_arr[0]) + np.dot( pinv(A), C_stacked)
     R = C_arr[0] - np.dot(H, MH)
     return R
