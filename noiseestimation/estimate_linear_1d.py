@@ -1,19 +1,22 @@
 import numpy as np
-from scipy.linalg import block_diag
+from math import fabs
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
 from sensorsim import SensorSim
 from correlator import Correlator
-from noiseestimator import estimate_noise, estimate_noise_approx, estimate_noise_mehra
-from math import fabs
+from noiseestimator import (
+    estimate_noise,
+    estimate_noise_approx,
+    estimate_noise_mehra)
+
 
 def plot_results(readings, mu, error, residuals):
-    f, axarr = plt.subplots(3,sharex=True)
+    f, axarr = plt.subplots(3, sharex=True)
     axarr[0].plot(readings, 'go', label="Measurements")
     axarr[0].plot(mu, 'm', linewidth=3, label="Filter")
     axarr[0].legend(loc="lower right")
-    axarr[0].set_xlim([0,100])
+    axarr[0].set_xlim([0, 100])
     axarr[0].set_title("Kalman filtering of position")
 
     axarr[1].plot(error, 'r')
@@ -29,11 +32,12 @@ def plot_results(readings, mu, error, residuals):
 
     plt.show()
 
+
 def run_tracker():
     # parameters
-    filter_misestimation_factor = 5.0;
-    sample_size = 100;
-    used_taps = int(sample_size * 0.5);
+    filter_misestimation_factor = 5.0
+    sample_size = 100
+    used_taps = int(sample_size * 0.5)
     measurement_std = 3.5
 
     # set up sensor simulator
@@ -66,7 +70,7 @@ def run_tracker():
         mu.extend(tracker.x[0])
         residuals.extend(tracker.y[0])
 
-    error = np.asarray(truths) - mu
+    # error = np.asarray(truths) - mu
 
     # plot_results(readings, mu, error, residuals)
 
@@ -78,21 +82,22 @@ def run_tracker():
     R_approx = estimate_noise_approx(covariance[0], tracker.H, tracker.P)
     abs_err = measurement_std**2 - R
     rel_err = abs_err / measurement_std**2
-    print "True: %.3f" % measurement_std**2
-    print "Filter: %.3f" % tracker.R
-    print "Estimated: %.3f" % R
-    print "Estimated (approximation): %.3f" % R_approx
-    print "Estimated (mehra): %.3f" % R_mehra
-    print "Absolute error: %.3f" % abs_err
-    print "Relative error: %.3f %%" % (rel_err * 100)
-    print "-" * 15
+    print("True: %.3f" % measurement_std**2)
+    print("Filter: %.3f" % tracker.R)
+    print("Estimated: %.3f" % R)
+    print("Estimated (approximation): %.3f" % R_approx)
+    print("Estimated (mehra): %.3f" % R_mehra)
+    print("Absolute error: %.3f" % abs_err)
+    print("Relative error: %.3f %%" % (rel_err * 100))
+    print("-" * 15)
     return rel_err
+
 
 if __name__ == "__main__":
     sum = .0
     runs = 100
     for i in range(runs):
-        print "%d / %d" % (i+1, runs)
+        print("%d / %d" % (i+1, runs))
         sum += fabs(run_tracker())
 
-    print "Avg relative error: %.3f %%" % (sum * 100 / runs)
+    print("Avg relative error: %.3f %%" % (sum * 100 / runs))
