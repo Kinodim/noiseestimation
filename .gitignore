@@ -3,3 +3,6 @@
 doc/_*
 venv/*
 .idea/*
+*.prof
+*.lprof
+.ropeproject/
