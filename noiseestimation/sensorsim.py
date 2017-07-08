@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.random as rnd
 
+
 class SensorSim:
     """This class provides simulated sensor readings
 
@@ -19,17 +20,18 @@ class SensorSim:
 
     """
 
-    def __init__(self, 
-            position,
-            velocity,
-            measurement_std,
-            dim = 1,
-            timestep = 0.1):
+    def __init__(self,
+                 position,
+                 velocity,
+                 measurement_std,
+                 dim=1,
+                 timestep=0.1):
         self.dim = dim
         self.position = np.asarray(position, dtype="float64").reshape(dim, 1)
         self.velocity = np.asarray(velocity, dtype="float64").reshape(dim, 1)
         if not hasattr(measurement_std, '__iter__'):
-            raise ValueError("The measurement noise std argument needs to be iterable")
+            raise ValueError(
+                "The measurement noise std argument needs to be iterable")
         self.measurement_std = measurement_std
         self.counter = -1
 
@@ -48,16 +50,16 @@ class SensorSim:
 
         Raises:
             IndexError: The end of the measurement_std list has been reached
-        
+
         """
         self.counter += 1
         if self.counter >= len(self.measurement_std):
             raise IndexError('No more measurement std data available')
 
         self.position += self.velocity
-        measurement = self.position + self.measurement_std[self.counter] * rnd.randn(self.dim, 1)
-        return measurement, np.array(self.position) # copy position
-
+        measurement = self.position + \
+            self.measurement_std[self.counter] * rnd.randn(self.dim, 1)
+        return measurement, np.array(self.position)  # copy position
 
     def batch_read(self):
         """Returns all the available data
@@ -70,5 +72,5 @@ class SensorSim:
                 - ndarray: Simulated sensor readings
                 - ndarray: True object positions
         """
-        batch = np.asarray([ self.read() for _ in self.measurement_std ])
+        batch = np.asarray([self.read() for _ in self.measurement_std])
         return batch

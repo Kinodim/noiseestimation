@@ -2,6 +2,7 @@ from math import sqrt, ceil
 from statsmodels.stats.diagnostic import acorr_ljungbox
 import numpy as np
 
+
 class Correlator:
     """
     Provides functionality related to the autocorrelation coefficients
@@ -17,6 +18,7 @@ class Correlator:
     The alternative is to employ the Ljung-Box test implemented in the
     statsmodel package
     """
+
     def __init__(self, values):
         self.values = np.asarray(values)
         # convert to required format in case we receive simple list
@@ -27,7 +29,7 @@ class Correlator:
     def covariance(self, lags):
         C = []
         for k in range(lags + 1):
-            c = np.zeros( (self.values.shape[1], self.values.shape[1]) )
+            c = np.zeros((self.values.shape[1], self.values.shape[1]))
             for i in range(k, len(self.values)):
                 c += np.dot(self.values[i], np.transpose(self.values[i-k]))
             c /= len(self.values)
@@ -36,12 +38,15 @@ class Correlator:
 
     def autocorrelation(self, lags):
         C = self.covariance(lags)
-        C_0_diagonals = np.diagonal(C[0]).reshape( (-1, 1) )
-        denominator = np.sqrt( np.dot(C_0_diagonals, np.transpose(C_0_diagonals) ) )
+        C_0_diagonals = np.diagonal(C[0]).reshape((-1, 1))
+        denominator = np.sqrt(
+            np.dot(
+                C_0_diagonals,
+                np.transpose(C_0_diagonals)))
         rho = [c / denominator for c in C]
         return np.asarray(rho)
 
-    def isWhite(self, method = 'ljung-box', lags = 0):
+    def isWhite(self, method='ljung-box', lags=0):
         """Checks whether the passed sequence is white noise
 
         Args:
@@ -52,7 +57,7 @@ class Correlator:
         Returns:
             bool: True if sequence is white
         """
-        #TODO extend to multiple dimensions
+        # TODO extend to multiple dimensions
         if method == 'mehra':
             limit = 1.96 / sqrt(len(self.values))
             outliers = 0
@@ -71,7 +76,8 @@ class Correlator:
             return True
         elif method == 'ljung-box':
             # use 10 lags as proposed by R. Hyndman
-            pval = acorr_ljungbox(self.values, 10)[1][-1] # last entry from p-values array
+            # last entry from p-values array
+            pval = acorr_ljungbox(self.values, 10)[1][-1]
             return pval >= 0.05
         else:
             raise ValueError("Method %s is not a valid argument" % method)
