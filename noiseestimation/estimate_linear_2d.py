@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from scipy.linalg import block_diag
 from filterpy.kalman import KalmanFilter
@@ -5,7 +6,7 @@ from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
 from sensorsim import SensorSim
 from correlator import Correlator
-from noiseestimator import estimate_noise
+from noiseestimator import estimate_noise, estimate_noise_approx
 
 
 def plot_results(readings, mu, error):
@@ -23,15 +24,20 @@ def plot_results(readings, mu, error):
     plt.show()
 
 
-def perform_estimation(residuals, tracker):
+def perform_estimation(residuals, tracker, lags):
     # cor = Correlator(residuals[-50:])
     # print cor.isWhite()
     # cor = Correlator(residuals)
     # print cor.isWhite()
 
     cor = Correlator(residuals)
-    R = estimate_noise(cor.autocorrelation(100), tracker.K, tracker.F, tracker.H)
-    print(R)
+    correlation = cor.autocorrelation(lags)
+    R = estimate_noise(
+        correlation, tracker.K, tracker.F, tracker.H)
+    R_approx = estimate_noise_approx(
+        correlation[0], tracker.H, tracker.P, "posterior")
+    print("Estimation: ", R)
+    print("Approximated estimation: ", R_approx)
     # abs_err = measurement_std**2 - R
     # rel_err = abs_err / measurement_std**2
     # print "True: %.3f" % measurement_std**2
@@ -46,6 +52,7 @@ def perform_estimation(residuals, tracker):
 def run_tracker():
     # parameters
     sample_size = 200
+    used_taps = 100
 
     # set up sensor simulator
     dt = 0.1
@@ -89,7 +96,7 @@ def run_tracker():
 
     # plot_results(readings, mu, error)
 
-    rel_err = perform_estimation(residuals, tracker)
+    rel_err = perform_estimation(residuals, tracker, used_taps)
     return rel_err
 
 

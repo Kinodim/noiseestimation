@@ -72,7 +72,7 @@ def estimate_noise_mehra(C_arr, K, F, H):
     return R
 
 
-def estimate_noise_approx(G, H, P):
+def estimate_noise_approx(G, H, P, residual_type="prior"):
     """Approximates noise based on the innovation variance
 
     This function implements another approach proposed by Mehra.
@@ -87,11 +87,19 @@ def estimate_noise_approx(G, H, P):
             with no time shift
         H (ndarray): Measurement matrix
         P (ndarray): Estimation covariance matrix
+        residual_type (str): Type of passed innovations. A priori ('prior') or
+            a posteriori ('posterior'). Default is 'prior'
 
     Returns:
         ndarray: The estimated measurement noise covariance matrix
 
     """
 
-    R = G - np.dot(H, np.dot(P, np.transpose(H)))
+    R = G
+    if residual_type == "prior":
+        R -= np.dot(H, np.dot(P, np.transpose(H)))
+    elif residual_type == "posterior":
+        R += np.dot(H, np.dot(P, np.transpose(H)))
+    else:
+        raise ValueError("Residual type %s not a valid option" % residual_type)
     return R
