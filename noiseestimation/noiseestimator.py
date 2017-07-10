@@ -80,7 +80,9 @@ def estimate_noise_approx(G, H, P, residual_type="prior"):
     innovation correlation, it calculates an estimation of the
     actual measurement noise covariance.
     For more information please refer to:
-    Approaches to Adaptive Filering, Mehra 1972
+    Approaches to Adaptive Filtering, Mehra 1972
+    Adaptive Kalman Filtering for INS/GPS, Mohamed and Schwarz 1999
+
 
     Args:
         G (ndarray): Estimate of the autocorrelation of the innovations
