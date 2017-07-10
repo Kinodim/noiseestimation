@@ -26,7 +26,7 @@ class Correlator:
         if len(self.values.shape) == 1:
             self.values = self.values[:, np.newaxis, np.newaxis]
 
-    def covariance(self, lags):
+    def autocorrelation(self, lags):
         C = []
         for k in range(lags + 1):
             c = np.zeros((self.values.shape[1], self.values.shape[1]))
@@ -36,8 +36,8 @@ class Correlator:
             C.append(c)
         return np.asarray(C)
 
-    def autocorrelation(self, lags):
-        C = self.covariance(lags)
+    def autocorrelation_coefficients(self, lags):
+        C = self.autocorrelation(lags)
         C_0_diagonals = np.diagonal(C[0]).reshape((-1, 1))
         denominator = np.sqrt(
             np.dot(
@@ -64,7 +64,7 @@ class Correlator:
 
             if lags == 0:
                 lags = int(ceil(len(self.values) / 2.0))
-            rho = self.autocorrelation(lags)
+            rho = self.autocorrelation_coefficients(lags)
             for elem in rho[1:]:
                 if -limit <= elem <= limit:
                     continue

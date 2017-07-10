@@ -7,14 +7,14 @@ def estimate_noise(C_arr, K, F, H):
 
     This function implements the approach proposed by Mehra.
     Using the matrices of a Kalman Filter and the innovation
-    covariance, it calculates an estimation of the
+    correlation, it calculates an estimation of the
     actual measurement noise covariance.
     For more information please refer to:
     On the Identification of Variances and Adaptive Kalman
     Filtering, Mehra 1970
 
     Args:
-        C_arr (ndarray): The list of innovation covariance estimates
+        C_arr (ndarray): The list of innovation correlation estimates
         K (ndarray): Kalman gain
         F (ndarray): Update matrix
         H (ndarray): Measurement matrix
@@ -77,7 +77,7 @@ def estimate_noise_approx(G, H, P):
 
     This function implements another approach proposed by Mehra.
     Using the matrices of a Kalman Filter and the resulting
-    innovation covariance, it calculates an estimation of the
+    innovation correlation, it calculates an estimation of the
     actual measurement noise covariance.
     For more information please refer to:
     Approaches to Adaptive Filering, Mehra 1972

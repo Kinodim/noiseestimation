@@ -30,7 +30,7 @@ def perform_estimation(residuals, tracker):
     # print cor.isWhite()
 
     cor = Correlator(residuals)
-    R = estimate_noise(cor.covariance(100), tracker.K, tracker.F, tracker.H)
+    R = estimate_noise(cor.autocorrelation(100), tracker.K, tracker.F, tracker.H)
     print(R)
     # abs_err = measurement_std**2 - R
     # rel_err = abs_err / measurement_std**2

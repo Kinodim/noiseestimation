@@ -75,9 +75,9 @@ def run_tracker():
             continue
         cor = Correlator(residuals[-estimation_sample_size:])
         used_taps = int(estimation_sample_size / 2)
-        covariance = cor.covariance(used_taps)
-        R = estimate_noise(covariance, tracker.K, tracker.F, tracker.H)
-        R_approx = estimate_noise_approx(covariance[0], tracker.H, tracker.P)
+        correlation = cor.autocorrelation(used_taps)
+        R = estimate_noise(correlation, tracker.K, tracker.F, tracker.H)
+        R_approx = estimate_noise_approx(correlation[0], tracker.H, tracker.P)
         abs_err = measurement_std**2 - R
         rel_err = abs_err / measurement_std**2
         print("True: %.3f" % measurement_std**2)
