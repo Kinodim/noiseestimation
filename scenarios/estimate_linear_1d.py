@@ -3,9 +3,9 @@ from math import fabs
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
-from sensorsim import SensorSim
-from correlator import Correlator
-from noiseestimator import (
+from noiseestimation.sensorsim import SensorSim
+from noiseestimation.correlator import Correlator
+from noiseestimation.noiseestimator import (
     estimate_noise,
     estimate_noise_approx,
     estimate_noise_mehra)

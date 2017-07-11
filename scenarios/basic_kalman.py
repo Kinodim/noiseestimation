@@ -3,7 +3,7 @@ from scipy.linalg import block_diag
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
-from sensorsim import SensorSim
+from noiseestimation.sensorsim import SensorSim
 
 
 def run_tracker():
