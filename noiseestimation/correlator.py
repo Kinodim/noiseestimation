@@ -31,7 +31,7 @@ class Correlator:
         for k in range(lags + 1):
             c = np.zeros((self.values.shape[1], self.values.shape[1]))
             for i in range(k, len(self.values)):
-                c += np.dot(self.values[i], np.transpose(self.values[i-k]))
+                c += np.inner(self.values[i], self.values[i-k])
             c /= len(self.values)
             C.append(c)
         return np.asarray(C)
