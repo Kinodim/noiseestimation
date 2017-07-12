@@ -5,12 +5,12 @@ from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
 from noiseestimation.sensor import LinearSensor
 
+# parameters
+measurement_var_max = 6
+num_samples = 600
 
-def run_tracker():
-    # parameters
-    measurement_var_max = 6
-    num_samples = 600
 
+def setup():
     # set up sensor simulator
     dt = 0.1
     F = np.array([[1, dt, 0,  0],
@@ -35,6 +35,10 @@ def run_tracker():
     tracker.x = np.array([[0, 0, 0, 0]]).T
     tracker.P = np.eye(4) * 500
 
+    return sim, tracker
+
+
+def filtering(sim, tracker):
     # perform sensor simulation and filtering
     measurement_vars = np.linspace(0, measurement_var_max, num_samples / 2)
     measurement_vars = np.concatenate(
@@ -58,8 +62,10 @@ def run_tracker():
     error = np.sqrt(np.sum(
         np.square(truths[:, [0, 2]] - filtered[:, [0, 2]]),
         1))
+    return readings, truths, filtered, error
 
-    # plot results
+
+def plot_results(readings, filtered, error):
     f, axarr = plt.subplots(2)
     axarr[0].plot(
         readings[:, 0],
@@ -76,6 +82,12 @@ def run_tracker():
     axarr[1].set_title("Estimation error")
 
     plt.show()
+
+
+def run_tracker():
+    sim, tracker = setup()
+    readings, truths, filtered, error = filtering(sim, tracker)
+    plot_results(readings, filtered, error)
 
 
 if __name__ == "__main__":
