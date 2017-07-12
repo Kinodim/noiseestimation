@@ -3,12 +3,19 @@ from math import fabs
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
-from noiseestimation.sensorsim import SensorSim
+from noiseestimation.sensor import LinearSensor
 from noiseestimation.correlator import Correlator
 from noiseestimation.noiseestimator import (
     estimate_noise,
     estimate_noise_approx,
     estimate_noise_mehra)
+
+# parameters
+runs = 100
+sample_size = 100
+used_taps = int(sample_size * 0.5)
+measurement_var = 9
+filter_misestimation_factor = 5.0
 
 
 def plot_results(readings, mu, error, residuals):
@@ -33,45 +40,53 @@ def plot_results(readings, mu, error, residuals):
     plt.show()
 
 
-def run_tracker():
-    # parameters
-    filter_misestimation_factor = 5.0
-    sample_size = 100
-    used_taps = int(sample_size * 0.5)
-    measurement_std = 3.5
-
+def setup():
     # set up sensor simulator
     dt = 0.1
-    measurement_std_list = np.asarray([measurement_std] * sample_size)
-    sim = SensorSim(0, 0.1, measurement_std_list, 1, timestep=dt)
-
+    F = np.array([[1, dt],
+                  [0,  1]])
+    H = np.array([[1, 0]])
+    x0 = np.array([[0],
+                   [0.1]])
+    sim = LinearSensor(x0, F, H)
     # set up kalman filter
     tracker = KalmanFilter(dim_x=2, dim_z=1)
-    tracker.F = np.array([[1, dt],
-                          [0,  1]])
+    tracker.F = F
     q = Q_discrete_white_noise(dim=2, dt=dt, var=0.01)
     tracker.Q = q
-    tracker.H = np.array([[1, 0]])
-    tracker.R = measurement_std**2 * filter_misestimation_factor
+    tracker.H = H
+    tracker.R = measurement_var * filter_misestimation_factor
     tracker.x = np.array([[0, 0]]).T
     tracker.P = np.eye(2) * 500
+    return sim, tracker
 
+
+def filtering(sim, tracker):
     # perform sensor simulation and filtering
+    Rs = [[[measurement_var]]] * sample_size
     readings = []
     truths = []
-    mu = []
+    filtered = []
     residuals = []
-    for _ in measurement_std_list:
-        reading, truth = sim.read()
-        readings.extend(reading.flatten())
-        truths.extend(truth.flatten())
+    for R in Rs:
+        sim.step()
+        reading = sim.read(R)
         tracker.predict()
         tracker.update(reading)
-        mu.extend(tracker.x[0])
+        readings.append(reading)
+        truths.append(sim.x)
+        filtered.append(tracker.x)
         residuals.extend(tracker.y[0])
 
-    # error = np.asarray(truths) - mu
+    readings = np.asarray(readings)
+    truths = np.asarray(truths)
+    filtered = np.asarray(filtered)
+    return readings, truths, filtered, residuals
 
+
+def run_tracker():
+    sim, tracker = setup()
+    readings, truths, filtered, residuals = filtering(sim, tracker)
     # plot_results(readings, mu, error, residuals)
 
     # perform estimation
@@ -80,9 +95,9 @@ def run_tracker():
     R = estimate_noise(correlation, tracker.K, tracker.F, tracker.H)
     R_mehra = estimate_noise_mehra(correlation, tracker.K, tracker.F, tracker.H)
     R_approx = estimate_noise_approx(correlation[0], tracker.H, tracker.P)
-    abs_err = measurement_std**2 - R
-    rel_err = abs_err / measurement_std**2
-    print("True: %.3f" % measurement_std**2)
+    abs_err = R - measurement_var
+    rel_err = abs_err / measurement_var
+    print("True: %.3f" % measurement_var)
     print("Filter: %.3f" % tracker.R)
     print("Estimated: %.3f" % R)
     print("Estimated (approximation): %.3f" % R_approx)
@@ -95,7 +110,6 @@ def run_tracker():
 
 if __name__ == "__main__":
     sum = .0
-    runs = 100
     for i in range(runs):
         print("%d / %d" % (i+1, runs))
         sum += fabs(run_tracker())
