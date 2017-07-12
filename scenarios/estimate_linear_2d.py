@@ -1,18 +1,27 @@
 from __future__ import print_function
 import numpy as np
+import math
 from scipy.linalg import block_diag
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
 from noiseestimation.sensor import LinearSensor
 from noiseestimation.correlator import Correlator
-from noiseestimation.noiseestimator import estimate_noise, estimate_noise_approx
+from noiseestimation.noiseestimator import (
+    estimate_noise,
+    estimate_noise_approx,
+    # estimate_noise_mehra
+)
 
 
 # parameters
+runs = 20
 sample_size = 200
 used_taps = 100
-measurement_var = 4
+measurement_var = 5
+R_proto = np.array([[1, 0.4],
+                    [0.4, 0.8]])
+Rs = [R_proto * measurement_var] * sample_size
 
 
 def setup():
@@ -47,7 +56,6 @@ def filtering(sim, tracker):
     truths = []
     filtered = []
     residuals = []
-    Rs = [np.eye(2) * measurement_var] * sample_size
     for R in Rs:
         sim.step()
         reading = sim.read(R)
@@ -80,6 +88,10 @@ def plot_results(readings, mu, error):
     plt.show()
 
 
+def matrix_error(estimate, truth):
+    return np.sqrt(np.sum(np.square(truth - estimate)))
+
+
 def perform_estimation(residuals, tracker, lags):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(lags)
@@ -87,9 +99,15 @@ def perform_estimation(residuals, tracker, lags):
         correlation, tracker.K, tracker.F, tracker.H)
     R_approx = estimate_noise_approx(
         correlation[0], tracker.H, tracker.P, "posterior")
-    print("Estimation: ", R)
-    print("Approximated estimation: ", R_approx)
-    # TODO Error calculation
+    truth = R_proto * measurement_var
+    error = matrix_error(R, truth)
+    print("Truth:\n", truth)
+    print("Estimation:\n", R)
+    print("Error:\n", matrix_error(R, truth))
+    print("Approximated estimation:\n", R_approx)
+    print("Error:\n", matrix_error(R_approx, truth))
+    print("-" * 15)
+    return error
     # abs_err = measurement_std**2 - R
     # rel_err = abs_err / measurement_std**2
     # print "True: %.3f" % measurement_std**2
@@ -97,7 +115,6 @@ def perform_estimation(residuals, tracker, lags):
     # print "Estimated: %.3f" % R
     # print "Absolute error: %.3f" % abs_err
     # print "Relative error: %.3f %%" % (rel_err * 100)
-    # print "-" * 15
     # return rel_err
 
 
@@ -108,16 +125,15 @@ def run_tracker():
 
     # plot_results(readings, mu, error)
 
-    rel_err = perform_estimation(residuals, tracker, used_taps)
-    return rel_err
+    error = perform_estimation(residuals, tracker, used_taps)
+    return error
 
 
 if __name__ == "__main__":
     run_tracker()
-    # sum = .0
-    # runs = 100
-    # for i in range(runs):
-    #     print "%d / %d" % (i+1, runs)
-    #     sum += fabs(run_tracker())
+    sum = .0
+    for i in range(runs):
+        print("%d / %d" % (i+1, runs))
+        sum += math.fabs(run_tracker())
 
-    # print "Avg relative error: %.3f %%" % (sum * 100 / runs)
+    print("Avg absolute error: %.3f" % (sum / runs))
