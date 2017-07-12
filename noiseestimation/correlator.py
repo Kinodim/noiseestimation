@@ -1,5 +1,4 @@
 from math import sqrt, ceil
-from statsmodels.stats.diagnostic import acorr_ljungbox
 import numpy as np
 
 
@@ -75,6 +74,7 @@ class Correlator:
                 return False
             return True
         elif method == 'ljung-box':
+            from statsmodels.stats.diagnostic import acorr_ljungbox
             # use 10 lags as proposed by R. Hyndman
             # last entry from p-values array
             pval = acorr_ljungbox(self.values, 10)[1][-1]
