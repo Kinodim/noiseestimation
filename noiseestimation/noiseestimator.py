@@ -2,7 +2,7 @@ import numpy as np
 from numpy.linalg import pinv
 
 
-def estimate_noise(C_arr, K, F, H):
+def estimate_noise(C_arr, K, F, H, return_state_covariance=False):
     """Estimates noise based on the innovation correlation
 
     This function implements the approach proposed by Mehra.
@@ -43,7 +43,10 @@ def estimate_noise(C_arr, K, F, H):
     C_stacked = C_arr.reshape((-1, num_observations))
     MH = np.dot(K, C_arr[0]) + np.dot(pinv(A), C_stacked)
     R = C_arr[0] - np.dot(H, MH)
-    return R
+    if return_state_covariance:
+        return R, MH
+    else:
+        return R
 
 
 def estimate_noise_mehra(C_arr, K, F, H):
