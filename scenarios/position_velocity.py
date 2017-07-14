@@ -21,18 +21,18 @@ Rs = [R_proto * measurement_var] * sample_size
 
 
 def plot_results(readings, mu, error, residuals):
-    f, axarr = plt.subplots(3, sharex=True)
-    axarr[0].plot(readings, 'go', label="Measurements")
-    axarr[0].plot(mu, 'm', linewidth=3, label="Filter")
+    f, axarr = plt.subplots(2, sharex=True)
+    axarr[0].plot(readings[:, 0], 'go', label="Measurements")
+    axarr[0].plot(mu[:, 0], 'm', linewidth=3, label="Filter")
     axarr[0].legend(loc="lower right")
     axarr[0].set_xlim([0, 100])
     axarr[0].set_title("Kalman filtering of position")
 
-    axarr[1].plot(error, 'r')
-    axarr[1].set_title("Estimation error")
+    axarr[1].plot(residuals[:, 0], 'b')
+    axarr[1].set_title("Residuals")
 
-    axarr[2].plot(residuals, 'b')
-    axarr[2].set_title("Residuals")
+    # axarr[1].plot(error, 'r')
+    # axarr[1].set_title("Estimation error")
 
     plt.show()
 
@@ -78,6 +78,7 @@ def filtering(sim, tracker):
     readings = np.asarray(readings)
     truths = np.asarray(truths)
     filtered = np.asarray(filtered)
+    residuals = np.asarray(residuals)
     return readings, truths, filtered, residuals
 
 
@@ -104,7 +105,7 @@ def perform_estimation(residuals, tracker, lags):
 def run_tracker():
     sim, tracker = setup()
     readings, truths, filtered, residuals = filtering(sim, tracker)
-    # plot_results(readings, mu, error, residuals)
+    plot_results(readings, filtered, [], residuals)
 
     print("Filter state covariance:\n", tracker.P)
     error = perform_estimation(residuals, tracker, used_taps)
