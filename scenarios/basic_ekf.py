@@ -7,18 +7,21 @@ from matplotlib import pyplot as plt
 from noiseestimation.sensor import Sensor
 
 # parameters
-measurement_var_max = 0.01
-num_samples = 300
+num_samples = 200
 dt = 0.1
+measurement_var_max = 0.3
+R_proto = np.array([[1, 0],
+                    [0, 0.2]])
 
 
 # return range and bearing measurement
 def h(x):
-    distance = (x[0, 0]**2 + x[2, 0] ** 2) ** 0.5 
+    distance = (x[0, 0]**2 + x[2, 0] ** 2) ** 0.5
     bearing = math.atan2(x[2, 0], x[0, 0])
 
     return np.array([[distance],
                      [bearing]])
+
 
 def H_jacobian_at(x):
     hyp = x[0, 0]**2 + x[2, 0]**2
@@ -27,17 +30,20 @@ def H_jacobian_at(x):
         [[x[0, 0] / dist, 0., x[2, 0] / dist],
          [-x[2, 0] / hyp, 0., x[0, 0] / hyp]])
 
+
 def normalize_angle(x):
     x = x % (2 * np.pi)
     if x > np.pi:
         x -= 2 * np.pi
     return x
 
+
 def custom_residual(a, b):
     res = np.array(
             [[a[0, 0] - b[0, 0]],
              [normalize_angle(a[1, 0] - b[1, 0])]])
     return res
+
 
 def setup():
     # set up sensor simulator
@@ -59,7 +65,7 @@ def setup():
     q_x = Q_discrete_white_noise(dim=2, dt=dt, var=0.001)
     q_y = 0.001 * dt**2
     tracker.Q = block_diag(q_x, q_y)
-    tracker.R = measurement_var_max
+    tracker.R = R_proto * measurement_var_max
     tracker.x = np.array([[2, -0.1, 4]]).T
     tracker.P = np.eye(3) * 500
 
@@ -68,12 +74,6 @@ def setup():
 
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
-    measurement_vars = np.linspace(0, measurement_var_max, num_samples / 2)
-    measurement_vars = np.concatenate(
-        (measurement_vars, list(reversed(measurement_vars))))
-    Rs = [np.eye(2) * measurement_var for measurement_var in measurement_vars]
-    R_proto = np.array([[1, 0],
-                        [0, 0.01]])
     Rs = [R_proto * measurement_var_max] * num_samples
     readings = []
     truths = []
@@ -82,7 +82,7 @@ def filtering(sim, tracker):
         sim.step()
         reading = sim.read(R)
         tracker.predict()
-        tracker.update(reading, H_jacobian_at, h, residual = custom_residual)
+        tracker.update(reading, H_jacobian_at, h, residual=custom_residual)
         readings.append(reading)
         truths.append(sim.x)
         filtered.append(tracker.x)
