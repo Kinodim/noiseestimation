@@ -18,7 +18,7 @@ from noiseestimation.noiseestimator import (
 num_samples = 200
 used_taps = num_samples / 2
 dt = 0.1
-measurement_var = 0.55
+measurement_var = .35
 R_proto = np.array([[1, 0],
                     [0, 0.3]])
 filter_misestimation_factor = 7.5
@@ -69,7 +69,7 @@ def setup():
         return np.dot(F, x)
 
     x0 = np.array([[-8],
-                   [0.5],
+                   [0.2],
                    [1]])
     sim = Sensor(x0, f, h)
 
@@ -136,7 +136,7 @@ def perform_estimation(residuals, tracker, H):
 
 
 def plot_results(readings, filtered, adjusted_filtered, truths):
-    f, axarr = plt.subplots(2)
+    f, axarr = plt.subplots(4)
     axarr[0].plot(
         filtered[:, 0],
         filtered[:, 2],
@@ -154,24 +154,25 @@ def plot_results(readings, filtered, adjusted_filtered, truths):
     axarr[0].set_ylim((0.5, 3))
 
     axarr[1].plot(
-        filtered[:, 1],
+        adjusted_filtered[:, 1],
         'b', linewidth=3, label="Filter")
     axarr[1].legend(loc="lower right")
     axarr[1].set_title("Kalman filtering of v_x")
 
-    # axarr[2].plot(
-    #     readings[:, 0, 0], 'go', label="Measurements")
-    # axarr[2].set_title("Range measurements")
+    axarr[2].plot(
+        readings[:, 0, 0], 'go', label="Measurements")
+    axarr[2].set_title("Range measurements")
 
-    # axarr[3].plot(
-    #    readings[:, 1, 0] * 180 / math.pi, 'go', label="Measurements")
-    # axarr[3].set_title("Bearing measurements")
+    axarr[3].plot(
+       readings[:, 1, 0] * 180 / math.pi, 'go', label="Measurements")
+    axarr[3].set_title("Bearing measurements")
 
     plt.show()
 
 
 def run_tracker():
     sim, tracker = setup()
+    readings, truths, filtered, Hs, residuals = filtering(sim, tracker)
     readings, truths, filtered, Hs, residuals = filtering(sim, tracker)
 
     R = perform_estimation(residuals, tracker, Hs[0])
