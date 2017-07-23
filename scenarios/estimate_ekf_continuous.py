@@ -15,13 +15,13 @@ from noiseestimation.noiseestimator import (
 )
 
 # parameters
-num_samples = 60
+num_samples = 200
 used_taps = num_samples / 2
 dt = 0.1
-measurement_var = 0.35
+measurement_var = 0.55
 R_proto = np.array([[1, 0],
                     [0, 0.3]])
-filter_misestimation_factor = 5.5
+filter_misestimation_factor = 7.5
 
 
 # return range and bearing measurement
@@ -68,7 +68,7 @@ def setup():
     def f(x):
         return np.dot(F, x)
 
-    x0 = np.array([[-3],
+    x0 = np.array([[-8],
                    [0.5],
                    [1]])
     sim = Sensor(x0, f, h)
@@ -80,7 +80,7 @@ def setup():
     q_y = 0.001 * dt**2
     tracker.Q = block_diag(q_x, q_y)
     tracker.R = R_proto * measurement_var * filter_misestimation_factor
-    tracker.x = np.array([[2, -0.1, 4]]).T
+    tracker.x = np.array([[1, 1, 1]]).T
     tracker.P = np.eye(3) * 500
 
     return sim, tracker
@@ -151,7 +151,7 @@ def plot_results(readings, filtered, adjusted_filtered, truths):
         'k', linewidth=3, label="Truth")
     axarr[0].legend(loc="upper right")
     axarr[0].set_title("Kalman filtering of position")
-    axarr[0].set_ylim((0.8,2))
+    axarr[0].set_ylim((0.5, 3))
 
     axarr[1].plot(
         filtered[:, 1],
@@ -159,10 +159,12 @@ def plot_results(readings, filtered, adjusted_filtered, truths):
     axarr[1].legend(loc="lower right")
     axarr[1].set_title("Kalman filtering of v_x")
 
-    # axarr[2].plot(readings[:, 0, 0], 'go', label="Measurements")
+    # axarr[2].plot(
+    #     readings[:, 0, 0], 'go', label="Measurements")
     # axarr[2].set_title("Range measurements")
 
-    # axarr[3].plot(readings[:, 1, 0] * 180 / math.pi, 'go', label="Measurements")
+    # axarr[3].plot(
+    #    readings[:, 1, 0] * 180 / math.pi, 'go', label="Measurements")
     # axarr[3].set_title("Bearing measurements")
 
     plt.show()
@@ -187,7 +189,8 @@ def run_tracker():
     normal_filtered = np.vstack((filtered, normal_filtered))
     normal_truths = np.vstack((truths, normal_truths))
 
-    plot_results(adjusted_readings, normal_filtered, adjusted_filtered, normal_truths)
+    plot_results(
+        adjusted_readings, normal_filtered, adjusted_filtered, normal_truths)
 
 
 if __name__ == "__main__":
