@@ -1,5 +1,17 @@
 from math import sqrt, ceil
 import numpy as np
+import itertools
+from multiprocessing import Pool
+
+
+def correlate(args):
+    data = args[0]
+    shift = args[1]
+    c = np.zeros((data.shape[1], data.shape[1]))
+    for i in range(shift, len(data)):
+        c += np.inner(data[i], data[i-shift])
+    c /= len(data)
+    return c
 
 
 class Correlator:
@@ -25,7 +37,16 @@ class Correlator:
         if len(self.values.shape) == 1:
             self.values = self.values[:, np.newaxis, np.newaxis]
 
-    def autocorrelation(self, lags):
+    def autocorrelation(self, lags, processes=8):
+        pool = Pool(processes)
+        shifts = range(lags + 1)
+        args = zip(itertools.repeat(self.values), shifts)
+        results = pool.map(correlate, args)
+        pool.close()
+        pool.join()
+        return np.asarray(results)
+
+    def autocorrelation_serial(self, lags):
         C = []
         for k in range(lags + 1):
             c = np.zeros((self.values.shape[1], self.values.shape[1]))
