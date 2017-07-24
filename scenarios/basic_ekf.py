@@ -9,9 +9,10 @@ from noiseestimation.sensor import Sensor
 # parameters
 num_samples = 200
 dt = 0.1
-measurement_var_max = 0.3
+measurement_var_max = 0.55
 R_proto = np.array([[1, 0],
                     [0, 0.2]])
+filter_misestimation_factor = 1
 
 
 # return range and bearing measurement
@@ -54,7 +55,7 @@ def setup():
     def f(x):
         return np.dot(F, x)
 
-    x0 = np.array([[-3],
+    x0 = np.array([[-5],
                    [0.5],
                    [1]])
     sim = Sensor(x0, f, h)
@@ -65,8 +66,8 @@ def setup():
     q_x = Q_discrete_white_noise(dim=2, dt=dt, var=0.001)
     q_y = 0.001 * dt**2
     tracker.Q = block_diag(q_x, q_y)
-    tracker.R = R_proto * measurement_var_max
-    tracker.x = np.array([[2, -0.1, 4]]).T
+    tracker.R = R_proto * measurement_var_max * filter_misestimation_factor
+    tracker.x = np.array([[-5, 0.5, 1]]).T
     tracker.P = np.eye(3) * 500
 
     return sim, tracker

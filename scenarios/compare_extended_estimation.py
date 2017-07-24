@@ -21,10 +21,10 @@ runs = 400
 num_samples = 200
 used_taps = 75
 dt = 0.1
-measurement_var = 0.55
+measurement_var = 0.45
 R_proto = np.array([[1, 0],
                     [0, 0.3]])
-filter_misestimation_factor = 2
+filter_misestimation_factor = 1.5
 
 
 # return range and bearing measurement
@@ -72,7 +72,7 @@ def setup():
         return np.dot(F, x)
 
     x0 = np.array([[-5],
-                   [0.1],
+                   [0.5],
                    [1]])
     sim = Sensor(x0, f, h)
 
@@ -83,7 +83,7 @@ def setup():
     q_y = 0.001 * dt**2
     tracker.Q = block_diag(q_x, q_y)
     tracker.R = R_proto * measurement_var * filter_misestimation_factor
-    tracker.x = np.array([[2, -0.1, 4]]).T
+    tracker.x = np.array([[-4, -0.1, 2]]).T
     tracker.P = np.eye(3) * 500
 
     return sim, tracker
