@@ -16,17 +16,17 @@ def correlate(args):
 
 class Correlator:
     """
-    Provides functionality related to the autocorrelation coefficients
-    of a sequence of values, more specifically to check whether the
-    sequence is some form of white noise.
+    Provides functionality related to the autocorrelation and
+    autocorrelation coefficients of a sequence of values
 
-    Two options to check this are offered:
+    This module also contains methods to check whether the given
+    sequence is some form of white noise.
+    Two options are offered:
     The first is to use its estimated autocorrelation
     and the times they exceed the 95% confidence interval.
     This approach is adapted from: On the Identification of Variances
     and Adaptive Kalman Filtering, Mehra 1970
-
-    The alternative is to employ the Ljung-Box test implemented in the
+    The alternative is to employ the Ljung-Box test as implemented in the
     statsmodel package
     """
 
