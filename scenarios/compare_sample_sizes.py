@@ -1,5 +1,6 @@
 import numpy as np
 import tqdm
+from multiprocessing import Pool
 from math import fabs
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
@@ -13,9 +14,8 @@ from noiseestimation.noiseestimator import (
 
 # parameters
 runs = 100
-# sample_sizes = [10, 20, 30, 40, 50, 60, 80, 100, 120, 150,
-#                 200, 250, 300, 500, 1000]
-sample_sizes = [20, 30, 50, 70, 100, 200]
+sample_sizes = [10, 20, 30, 40, 50, 60, 80, 100, 120, 150,
+                200, 250, 300, 500, 1000]
 measurement_var = 9
 filter_misestimation_factor = 5.0
 
@@ -89,17 +89,28 @@ def perform_estimation(residuals, tracker, sample_size):
     return R
 
 
+def run_tracker(sample_size):
+    sim, tracker = setup()
+    _, _, _, residuals = filtering(sim, tracker, sample_size)
+    R = perform_estimation(residuals, tracker, sample_size)
+    return R
+
+
 def check_sample_size(sample_size):
     error_sum = 0
     Rs = []
-    for run in tqdm.tqdm(range(runs)):
-        sim, tracker = setup()
-        _, _, _, residuals = filtering(sim, tracker, sample_size)
-        R = perform_estimation(residuals, tracker, sample_size)
-        Rs.append(R)
+    pool = Pool(8)
+    args = [sample_size] * runs
+    pbar = tqdm.tqdm(total=runs)
+    for R in pool.imap_unordered(run_tracker, args, chunksize=2):
+        pbar.update()
         abs_err = R - measurement_var
         rel_err = abs_err / measurement_var
         error_sum += fabs(rel_err)
+        Rs.append(R)
+    pbar.close()
+    pool.close()
+    pool.join()
 
     avg_rel_err = error_sum / runs
     # ddof = 1 assures an unbiased estimate
