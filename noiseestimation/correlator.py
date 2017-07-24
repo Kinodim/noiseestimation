@@ -37,7 +37,7 @@ class Correlator:
         if len(self.values.shape) == 1:
             self.values = self.values[:, np.newaxis, np.newaxis]
 
-    def autocorrelation(self, lags, processes=8):
+    def autocorrelation_multi(self, lags, processes=8):
         pool = Pool(processes)
         shifts = range(lags + 1)
         args = zip(itertools.repeat(self.values), shifts)
@@ -46,7 +46,7 @@ class Correlator:
         pool.join()
         return np.asarray(results)
 
-    def autocorrelation_serial(self, lags):
+    def autocorrelation(self, lags):
         C = []
         for k in range(lags + 1):
             c = np.zeros((self.values.shape[1], self.values.shape[1]))
