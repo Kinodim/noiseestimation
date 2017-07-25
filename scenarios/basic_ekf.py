@@ -9,7 +9,7 @@ from noiseestimation.sensor import Sensor
 # parameters
 num_samples = 300
 dt = 0.1
-measurement_var_max = 0.25
+measurement_var_max = 0.15
 R_proto = np.array([[1, 0],
                     [0, 0.2]])
 filter_misestimation_factor = 1
