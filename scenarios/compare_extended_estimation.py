@@ -123,28 +123,23 @@ def perform_estimation(residuals, residuals_posterior, tracker, H_arr):
         correlation, tracker.K, tracker.F, H_arr[-1])
     R_mehra = estimate_noise_mehra(
         correlation, tracker.K, tracker.F, H_arr[-1])
-    cor_posterior = Correlator(residuals_posterior)
-    correlation_posterior = cor_posterior.autocorrelation(0)
-    R_approx = estimate_noise_approx(
-        correlation_posterior[0], H_arr[-1], tracker.P, "posterior")
     R_extended = estimate_noise_extended(
         correlation, tracker.K, tracker.F, H_arr[::-1])
+    R_approx = estimate_noise_approx(
+        correlation[0], H_arr[-1], tracker.P)
+    cor_posterior = Correlator(residuals_posterior)
+    correlation_posterior = cor_posterior.autocorrelation(0)
+    R_approx_posterior = estimate_noise_approx(
+        correlation_posterior[0], H_arr[-1], tracker.P, "posterior")
+
     truth = R_proto * measurement_var
-    # print("Truth:\n", truth)
-    # print("Estimation:\n", R)
-    # print("Error:\n", matrix_error(R, truth))
-    # print("Extended estimation:\n", R_extended)
-    # print("Error:\n", matrix_error(R_extended, truth))
-    # print("Mehra estimation:\n", R_mehra)
-    # print("Error:\n", matrix_error(R_mehra, truth))
-    # print("Approximated estimation:\n", R_approx)
-    # print("Error:\n", matrix_error(R_approx, truth))
-    # print("-" * 15)
     error_standard = matrix_error(R, truth)
     error_extended = matrix_error(R_extended, truth)
     error_mehra = matrix_error(R_mehra, truth)
     error_approx = matrix_error(R_approx, truth)
-    return error_standard, error_extended, error_mehra, error_approx
+    error_approx_posterior = matrix_error(R_approx_posterior, truth)
+    return (error_standard, error_extended, error_mehra,
+            error_approx, error_approx_posterior)
 
 
 def plot_results(readings, filtered, truths):
@@ -214,3 +209,6 @@ if __name__ == "__main__":
     print("Approximate estimation:")
     print("\tAverage Error: %.6f" % avg_errors[3])
     print("\tError variance: %.6f" % variances[3])
+    print("Approximate estimation (posterior):")
+    print("\tAverage Error: %.6f" % avg_errors[4])
+    print("\tError variance: %.6f" % variances[4])
