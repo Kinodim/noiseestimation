@@ -125,7 +125,7 @@ def perform_estimation(residuals, tracker, H_arr):
     R_mehra = estimate_noise_mehra(
         correlation, tracker.K, tracker.F, H_arr[-1])
     R_approx = estimate_noise_approx(
-        correlation[0], H_arr[-1], tracker.P, "posterior")
+        correlation[0], H_arr[-1], tracker.P)
     R_extended = estimate_noise_extended(
         correlation, tracker.K, tracker.F, H_arr[::-1])
     truth = R_proto * measurement_var
