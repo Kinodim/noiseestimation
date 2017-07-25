@@ -7,9 +7,9 @@ from matplotlib import pyplot as plt
 from noiseestimation.sensor import Sensor
 
 # parameters
-num_samples = 200
+num_samples = 300
 dt = 0.1
-measurement_var_max = 0.55
+measurement_var_max = 0.25
 R_proto = np.array([[1, 0],
                     [0, 0.2]])
 filter_misestimation_factor = 1
@@ -63,8 +63,8 @@ def setup():
     # set up kalman filter
     tracker = ExtendedKalmanFilter(dim_x=3, dim_z=2)
     tracker.F = F
-    q_x = Q_discrete_white_noise(dim=2, dt=dt, var=0.001)
-    q_y = 0.001 * dt**2
+    q_x = Q_discrete_white_noise(dim=2, dt=dt, var=0.01)
+    q_y = 0.01 * dt**2
     tracker.Q = block_diag(q_x, q_y)
     tracker.R = R_proto * measurement_var_max * filter_misestimation_factor
     tracker.x = np.array([[-5, 0.5, 1]]).T
@@ -76,9 +76,7 @@ def setup():
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [R_proto * measurement_var_max] * num_samples
-    readings = []
-    truths = []
-    filtered = []
+    readings, truths, filtered, Ps = [], [], [], []
     for R in Rs:
         sim.step()
         reading = sim.read(R)
@@ -87,18 +85,16 @@ def filtering(sim, tracker):
         readings.append(reading)
         truths.append(sim.x)
         filtered.append(tracker.x)
+        Ps.append(tracker.P)
 
     readings = np.asarray(readings)
     truths = np.asarray(truths)
     filtered = np.asarray(filtered)
-    # error = np.sqrt(np.sum(
-    #     np.square(truths[:, [0, 2]] - filtered[:, [0, 2]]),
-    #     1))
-    error = []
-    return readings, truths, filtered, error
+    Ps = np.asarray(Ps)
+    return readings, truths, filtered, Ps
 
 
-def plot_results(readings, filtered, truths):
+def plot_results(readings, filtered, truths, Ps):
     f, axarr = plt.subplots(4)
     axarr[0].plot(
         filtered[:, 0],
@@ -111,11 +107,12 @@ def plot_results(readings, filtered, truths):
     axarr[0].legend(loc="lower right")
     axarr[0].set_title("Kalman filtering of position")
 
+    confidences = np.sum(np.diagonal(Ps, axis1=1, axis2=2), axis=1)
     axarr[1].plot(
-        filtered[:, 1],
-        'b', linewidth=3, label="Filter")
-    axarr[1].legend(loc="lower right")
-    axarr[1].set_title("Kalman filtering of v_x")
+        confidences,
+        'b', linewidth=3)
+    axarr[1].set_title("State estimate covariance (P)")
+    axarr[1].set_ylim((0, 1))
 
     axarr[2].plot(readings[:, 0, 0], 'go', label="Measurements")
     axarr[2].set_title("Range measurements")
@@ -131,8 +128,8 @@ def plot_results(readings, filtered, truths):
 
 def run_tracker():
     sim, tracker = setup()
-    readings, truths, filtered, error = filtering(sim, tracker)
-    plot_results(readings, filtered, truths)
+    readings, truths, filtered, Ps = filtering(sim, tracker)
+    plot_results(readings, filtered, truths, Ps)
 
 
 if __name__ == "__main__":
