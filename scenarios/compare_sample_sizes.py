@@ -14,10 +14,10 @@ from noiseestimation.noiseestimator import (
 
 # parameters
 runs = 100
-sample_sizes = [10, 20, 30, 40, 50, 60, 80, 100, 120, 150,
+sample_sizes = [80, 100, 120, 150,
                 200, 250, 300, 500, 1000]
 measurement_var = 9
-filter_misestimation_factor = 5.0
+filter_misestimation_factor = 1.0
 
 
 def plot_results(errors, variances):
@@ -27,7 +27,7 @@ def plot_results(errors, variances):
     axarr[0].set_title("Relative error")
 
     axarr[1].bar([x for x in range(len(sample_sizes))],
-                 errors, 1, color='red')
+                 errors, 1, color='blue')
     axarr[1].set_title("Variances")
 
     plt.show()
@@ -70,6 +70,8 @@ def filtering(sim, tracker, sample_size):
         truths.append(sim.x)
         filtered.append(tracker.x)
         residuals.extend(tracker.y[0])
+        # posterior
+        # residuals.extend((np.dot(tracker.H, tracker.x) - reading)[0])
 
     readings = np.asarray(readings)
     truths = np.asarray(truths)
@@ -86,6 +88,8 @@ def perform_estimation(residuals, tracker, sample_size):
     #     correlation, tracker.K, tracker.F, tracker.H)
     # R_approx = estimate_noise_approx(
     #     correlation[0], tracker.H, tracker.P)
+    # R_approx_posterior = estimate_noise_approx(
+    #     correlation[0], tracker.H, tracker.P, "posterior")
     return R
 
 
