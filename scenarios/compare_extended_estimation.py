@@ -21,10 +21,10 @@ runs = 400
 num_samples = 200
 used_taps = 75
 dt = 0.1
-measurement_var = 0.45
+measurement_var = 0.05
 R_proto = np.array([[1, 0],
-                    [0, 0.3]])
-filter_misestimation_factor = 1.5
+                    [0, 0.2]])
+filter_misestimation_factor = 0.1
 
 
 # return range and bearing measurement
@@ -92,11 +92,8 @@ def setup():
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [R_proto * measurement_var] * num_samples
-    readings = []
-    truths = []
-    filtered = []
-    Hs = []
-    residuals = []
+    (readings, truths, filtered,
+     Hs, residuals, residuals_posterior) = [], [], [], [], [], []
     for R in Rs:
         sim.step()
         reading = sim.read(R)
@@ -108,24 +105,28 @@ def filtering(sim, tracker):
         truths.append(sim.x)
         filtered.append(tracker.x)
         residuals.append(tracker.y)
+        residuals_posterior.append(custom_residual(reading, h(tracker.x)))
 
     readings = np.asarray(readings)
     truths = np.asarray(truths)
     filtered = np.asarray(filtered)
     Hs = np.asarray(Hs)
     residuals = np.asarray(residuals)
-    return readings, truths, filtered, Hs, residuals
+    residuals_posterior = np.asarray(residuals_posterior)
+    return readings, truths, filtered, Hs, residuals, residuals_posterior
 
 
-def perform_estimation(residuals, tracker, H_arr):
+def perform_estimation(residuals, residuals_posterior, tracker, H_arr):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
     R = estimate_noise(
         correlation, tracker.K, tracker.F, H_arr[-1])
     R_mehra = estimate_noise_mehra(
         correlation, tracker.K, tracker.F, H_arr[-1])
+    cor_posterior = Correlator(residuals_posterior)
+    correlation_posterior = cor_posterior.autocorrelation(0)
     R_approx = estimate_noise_approx(
-        correlation[0], H_arr[-1], tracker.P)
+        correlation_posterior[0], H_arr[-1], tracker.P, "posterior")
     R_extended = estimate_noise_extended(
         correlation, tracker.K, tracker.F, H_arr[::-1])
     truth = R_proto * measurement_var
@@ -176,8 +177,10 @@ def plot_results(readings, filtered, truths):
 
 def run_tracker(dummy):
     sim, tracker = setup()
-    readings, truths, filtered, Hs, residuals = filtering(sim, tracker)
-    errors = perform_estimation(residuals[-150:], tracker, Hs)
+    (readings, truths,
+     filtered, Hs, residuals, residuals_posterior) = filtering(sim, tracker)
+    errors = perform_estimation(
+        residuals[-150:], residuals_posterior[-150:], tracker, Hs)
     # plot_results(readings, filtered, truths)
     return errors
 
@@ -200,14 +203,14 @@ if __name__ == "__main__":
     variances = np.var(errors_arr, axis=0, ddof=1)
     print("-" * 20)
     print("Standard estimation:")
-    print("\tAverage Error: %.4f" % avg_errors[0])
-    print("\tError variance: %.4f" % variances[0])
+    print("\tAverage Error: %.6f" % avg_errors[0])
+    print("\tError variance: %.6f" % variances[0])
     print("Extended estimation:")
-    print("\tAverage Error: %.4f" % avg_errors[1])
-    print("\tError variance: %.4f" % variances[1])
+    print("\tAverage Error: %.6f" % avg_errors[1])
+    print("\tError variance: %.6f" % variances[1])
     print("Mehra estimation:")
-    print("\tAverage Error: %.4f" % avg_errors[2])
-    print("\tError variance: %.4f" % variances[2])
-    print("Aprroximate estimation:")
-    print("\tAverage Error: %.4f" % avg_errors[3])
-    print("\tError variance: %.4f" % variances[3])
+    print("\tAverage Error: %.6f" % avg_errors[2])
+    print("\tError variance: %.6f" % variances[2])
+    print("Approximate estimation:")
+    print("\tAverage Error: %.6f" % avg_errors[3])
+    print("\tError variance: %.6f" % variances[3])
