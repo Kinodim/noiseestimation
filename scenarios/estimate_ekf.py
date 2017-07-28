@@ -10,7 +10,8 @@ from noiseestimation.correlator import Correlator
 from noiseestimation.noiseestimator import (
     estimate_noise,
     estimate_noise_approx,
-    estimate_noise_mehra
+    estimate_noise_mehra,
+    estimate_noise_extended
 )
 
 # parameters
@@ -97,9 +98,9 @@ def filtering(sim, tracker):
         sim.step()
         reading = sim.read(R)
         tracker.predict()
-        # TODO try to put H calculation after update step
-        Hs.append(H_jacobian_at(tracker.x))
         tracker.update(reading, H_jacobian_at, h, residual=custom_residual)
+        # Put H calculation after update step
+        Hs.append(H_jacobian_at(tracker.x))
         readings.append(reading)
         truths.append(sim.x)
         filtered.append(tracker.x)
@@ -117,15 +118,19 @@ def perform_estimation(residuals, tracker, H):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
     R = estimate_noise(
+        correlation, tracker.K, tracker.F, H[0])
+    R_extended = estimate_noise_extended(
         correlation, tracker.K, tracker.F, H)
     R_mehra = estimate_noise_mehra(
-        correlation, tracker.K, tracker.F, H)
+        correlation, tracker.K, tracker.F, H[0])
     R_approx = estimate_noise_approx(
-        correlation[0], H, tracker.P, "posterior")
+        correlation[0], H[0], tracker.P)
     truth = R_proto * measurement_var
     print("Truth:\n", truth)
     print("Estimation:\n", R)
     print("Error:\n", matrix_error(R, truth))
+    print("Extended Estimation:\n", R)
+    print("Error:\n", matrix_error(R_extended, truth))
     print("Mehra estimation:\n", R_mehra)
     print("Error:\n", matrix_error(R_mehra, truth))
     print("Approximated estimation:\n", R_approx)
@@ -166,7 +171,7 @@ def plot_results(readings, filtered, truths):
 def run_tracker():
     sim, tracker = setup()
     readings, truths, filtered, Hs, residuals = filtering(sim, tracker)
-    perform_estimation(residuals, tracker, Hs[0])
+    perform_estimation(residuals[10:], tracker, Hs[::-1])
     plot_results(readings, filtered, truths)
 
 
