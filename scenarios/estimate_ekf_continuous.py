@@ -153,7 +153,7 @@ def plot_results(readings, filtered, adjusted_filtered, truths, Ps):
         truths[:, 0],
         truths[:, 2],
         'k', linewidth=3, label="Truth")
-    axarr[0].legend(loc="upper right")
+    axarr[0].legend(loc="lower left")
     axarr[0].set_title("Kalman filtering of position")
     axarr[0].set_ylim((0.8, 1.2))
 
