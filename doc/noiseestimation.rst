@@ -4,14 +4,6 @@ noiseestimation package
 Submodules
 ----------
 
-noiseestimation\.basic\_kalman module
--------------------------------------
-
-.. automodule:: noiseestimation.basic_kalman
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 noiseestimation\.correlator module
 ----------------------------------
 
@@ -20,18 +12,26 @@ noiseestimation\.correlator module
     :undoc-members:
     :show-inheritance:
 
-noiseestimation\.mehra\_linear module
--------------------------------------
-
-.. automodule:: noiseestimation.mehra_linear
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 noiseestimation\.noiseestimator module
 --------------------------------------
 
 .. automodule:: noiseestimation.noiseestimator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+noiseestimation\.playback\_sensor module
+----------------------------------------
+
+.. automodule:: noiseestimation.playback_sensor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+noiseestimation\.sensor module
+------------------------------
+
+.. automodule:: noiseestimation.sensor
     :members:
     :undoc-members:
     :show-inheritance:
