@@ -36,8 +36,10 @@ class PlaybackSensor:
             time = float(self.data[self.index]["time"])
         except KeyError:
             print("No time field found")
+            time = 0
         except ValueError:
             print("Error parsing current time")
+            time = 0
 
         y = np.zeros((len(self.fields), 1), "double")
         for field_idx, field in enumerate(self.fields):
