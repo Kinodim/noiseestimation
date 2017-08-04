@@ -32,7 +32,7 @@ class TestPlaybackSensor:
     def test_read__fields(self):
         for _ in range(self.num_entries):
             time, fields = self.sensor.read([[0]])
-            assert len(fields) == 3
+            assert fields.shape == (3, 1)
 
     def test_read__end_of_data(self):
         for elem in range(self.num_entries):
