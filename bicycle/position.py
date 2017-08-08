@@ -93,7 +93,6 @@ def filtering(sim, tracker):
 
 
 def plot_results(readings, filtered, velocities, delta_ts):
-
     # skip last value in loops
     yaw_angles = [0] * len(filtered)
     for idx, yawrate in enumerate(filtered[:-1, 1, 0]):
@@ -108,6 +107,8 @@ def plot_results(readings, filtered, velocities, delta_ts):
         positions[idx + 1] = positions[idx] + delta
 
     plt.plot(positions[:, 0], positions[:, 1], 'b-')
+    plt.xlabel("x (m)")
+    plt.ylabel("y (m)")
     plt.show()
 
 

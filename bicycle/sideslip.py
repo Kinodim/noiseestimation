@@ -88,20 +88,16 @@ def filtering(sim, tracker):
 
 def plot_results(readings, filtered):
     f, axarr = plt.subplots(2)
-    axarr[0].set_title("Schwimmwinkel")
+    axarr[0].set_title("Schwimmwinkel (deg)")
     axarr[0].plot(
-        filtered[:, 0],
+        filtered[:, 0] * 180.0 / np.pi,
         'go')
-    axarr[0].set_ylim((-0.3, 0.3))
+    axarr[0].set_ylim((-20, 20))
 
-    axarr[1].set_title("Gierrate")
+    axarr[1].set_title("Gierrate (deg/s)")
     axarr[1].plot(
-        filtered[:, 1],
+        filtered[:, 1] * 180.0 / np.pi,
         'ro')
-    # axarr[1].plot(
-    #     filtered[:, 0],
-    #     filtered[:, 2],
-    #     'm', linewidth=3)
     plt.show()
 
 
