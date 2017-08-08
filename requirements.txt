@@ -4,3 +4,4 @@ pytest
 statsmodels
 filterpy
 tqdm
+sympy
