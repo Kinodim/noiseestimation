@@ -1,4 +1,3 @@
-data/*
 *.pyc
 .cache
 doc/_*
