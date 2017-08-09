@@ -1,13 +1,20 @@
 from filterpy.kalman import ExtendedKalmanFilter as EKF
 import numpy as np
-import math
-from math import sin, cos, tan, sqrt
+from math import sin, cos, tan
 
 
 class SimpleBikeEKF(EKF):
     turning_threshold_angle = 0.001
 
     def __init__(self, dt, wheelbase, var_vel, var_steer):
+        """Derives the EKF class to implement the specific
+        functioning of a mobile robot following a simple bicycle model.
+
+        The state consists of the x and y position and the heading
+        The control input contains the velocity and the steering angle
+        The measurement is composed of a direct observation of the position
+        """
+
         EKF.__init__(self, 3, 2, 2)
         self.dt = dt
         self.wheelbase = wheelbase
@@ -20,8 +27,17 @@ class SimpleBikeEKF(EKF):
         B = self.Bx(u)
 
         # covariance of motion in control space
-        M = np.diag(self.var_vel, self.var_steer)
+        M = np.diag((self.var_vel, self.var_steer))
         self.P = np.dot(F, np.dot(self.P, F.T)) + np.dot(B, np.dot(M, B.T))
+
+    def update(self, z):
+        def Hx(x):
+            return np.dot(self.H, x)
+
+        def HJacobian(x):
+            return self.H
+
+        EKF.update(self, z, HJacobian, Hx)
 
     def move(self, u):
         heading = self.x[2, 0]
@@ -44,7 +60,7 @@ class SimpleBikeEKF(EKF):
         self.x += dx
 
     def Fx(self, u):
-        vel = u[1, 0]
+        vel = u[0, 0]
         steering_angle = u[1, 0]
         theta = self.x[2, 0]
         if abs(steering_angle) < self.turning_threshold_angle:
@@ -58,11 +74,11 @@ class SimpleBikeEKF(EKF):
              [0, 0, 1]])
 
     def Bx(self, u):
-        vel = u[1, 0]
+        vel = u[0, 0]
         steering_angle = u[1, 0]
         theta = self.x[2, 0]
-        if abs(steering_angle) < self.turning_threshold_angle:
-            return np.eye(3)
+        # if abs(steering_angle) < self.turning_threshold_angle:
+        #     return np.eye(3)
 
         d = vel * self.dt
         beta = (d / self.wheelbase) * tan(steering_angle)
