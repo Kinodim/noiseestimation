@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 from __future__ import print_function
+import sys
 import os
 import argparse
-import functools
 import json
 
-desired_keys = []
 
-
-def process_content(content, desired_keys):
+def process_content(content):
+    desired_keys = args.fields
     res = {}
     for line in content.splitlines():
         key, val = line.split(":", 1)
@@ -21,6 +20,8 @@ def process_content(content, desired_keys):
 
 
 def keep_entry(key, val):
+    # filter out entries with no timestamp or those with same
+    # timestamp as previous entry
     if key != "time":
         return True
     if val == "0":
@@ -33,23 +34,38 @@ def keep_entry(key, val):
 keep_entry.last_time = "0"
 
 
-def iterate_dir(dirname, processor):
+def iterate_dir(dirname):
     """Takes relative path
     """
-    path = os.path.join(os.getcwd(), args.data_folder)
+    path = os.path.join(os.getcwd(), dirname)
     if not os.path.isdir(path):
-        print("Error! Specified folder does not exist!")
-        return
+        print("Error: Specified folder %s does not exist" % dirname)
+        sys.exit(-1)
 
     contents = []
     for fn in sorted(os.listdir(path)):
         file_path = os.path.join(path, fn)
         with open(file_path, "r") as f:
             content = f.read()
-        res = processor(content)
+        res = process_content(content)
         if res:
             contents.append(res)
     return contents
+
+
+def read_dirs(dirnames):
+    res = iterate_dir(dirnames[0])
+
+    for dirname in dirnames[1:]:
+        contents = iterate_dir(dirname)
+        for idx, entry in enumerate(res):
+            if idx >= len(contents):
+                print("Error: No matching file for index %d in directory %s" %
+                      (idx, dirname))
+                break
+            entry.update(contents[idx])
+
+    return res
 
 
 def write_json(contents, filename):
@@ -63,15 +79,17 @@ def write_json(contents, filename):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Merge car sensor data into single file")
-    parser.add_argument(dest="data_folder", action="store", type=str,
-                        help="Folder containing data files")
-    parser.add_argument(dest="output_file", action="store", type=str,
+    parser.add_argument("-d", dest="data_folders", action="store", nargs="+",
+                        type=str, required=True, metavar="DataFolder",
+                        help="Folder(s) containing data files")
+    parser.add_argument("-o", dest="output_file", action="store", type=str,
+                        required=True, metavar="OutputFile",
                         help="Output file name")
-    parser.add_argument(dest="fields", action="store", nargs="+", type=str,
-                        help="Data fields to store")
+    parser.add_argument(dest="fields", action="store", nargs="+",
+                        type=str,
+                        metavar="Field", help="Data fields to store")
     args = parser.parse_args()
 
-    processor = functools.partial(process_content, desired_keys=args.fields)
-    contents = iterate_dir(args.data_folder, processor)
+    contents = read_dirs(args.data_folders)
     print("Entries: ", len(contents))
     write_json(contents, args.output_file)
