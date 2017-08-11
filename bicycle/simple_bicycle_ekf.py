@@ -20,6 +20,8 @@ class SimpleBicycleEKF(EKF):
         self.wheelbase = wheelbase
         self.var_vel = var_vel
         self.var_steer = var_steer
+        self.H = np.array([[1, 0, 0],
+                           [0, 1, 0]])
 
     def predict(self, u=0):
         self.move(u)
