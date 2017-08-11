@@ -3,7 +3,7 @@ import numpy as np
 from math import sin, cos, tan
 
 
-class SimpleBikeEKF(EKF):
+class SimpleBicycleEKF(EKF):
     turning_threshold_angle = 0.001
 
     def __init__(self, dt, wheelbase, var_vel, var_steer):
