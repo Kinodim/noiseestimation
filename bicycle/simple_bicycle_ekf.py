@@ -1,5 +1,6 @@
 from filterpy.kalman import ExtendedKalmanFilter as EKF
 import numpy as np
+import sys
 from math import sin, cos, tan
 
 
@@ -26,6 +27,7 @@ class SimpleBicycleEKF(EKF):
     def predict(self, u=0):
         self.move(u)
         F = self.Fx(u)
+        self.F = F
         B = self.Bx(u)
 
         # covariance of motion in control space
@@ -79,10 +81,13 @@ class SimpleBicycleEKF(EKF):
         vel = u[0, 0]
         steering_angle = u[1, 0]
         theta = self.x[2, 0]
-        # if abs(steering_angle) < self.turning_threshold_angle:
-        #     return np.eye(3)
-
         d = vel * self.dt
+
+        if abs(steering_angle) < self.turning_threshold_angle:
+            return np.array([[self.dt * cos(theta), 1e8],
+                             [self.dt * sin(theta), 1e8],
+                             [0, d / self.wheelbase]])
+
         beta = (d / self.wheelbase) * tan(steering_angle)
         R = self.wheelbase / tan(steering_angle)
         alpha = steering_angle
