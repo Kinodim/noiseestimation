@@ -10,20 +10,20 @@ class TestSensor:
         x0 = np.array([[1],
                        [2]])
 
-        def f(x):
-            addend = np.array([[1.0],
-                               [2.0]])
-            return x + addend
+        def f(x, offset):
+            return x + offset
 
-        def h(x):
-            return np.array([[math.sin(x[0, 0])],
+        def h(x, x_offset):
+            return np.array([[math.sin(x[0, 0]) + x_offset],
                              [math.cos(x[1, 0])]])
 
         self.testee_2d = sn.Sensor(x0, f, h)
         self.R_2d = np.eye(2) * 1.0
 
     def test_2d_step(self):
-        self.testee_2d.step()
+        u = np.array([[1],
+                      [2]])
+        self.testee_2d.step(u)
         assert_array_equal(
             np.array([[2.0],
                       [4.0]]),
@@ -31,11 +31,12 @@ class TestSensor:
         )
 
     def test_2d_read(self):
-        reading = self.testee_2d.read(self.R_2d)
+        reading = self.testee_2d.read(self.R_2d, 0)
         assert reading.shape == (2, 1)
-        reading_pure = self.testee_2d.read(np.zeros((2, 2)))
+        x_offset = 0.1
+        reading_pure = self.testee_2d.read(np.zeros((2, 2)), x_offset)
         assert_array_equal(
-            np.array([[math.sin(1.0)],
+            np.array([[math.sin(1.0) + x_offset],
                       [math.cos(2.0)]]),
             reading_pure
         )

@@ -12,11 +12,11 @@ class Sensor:
         self.f = f
         self.h = h
 
-    def step(self):
-        self.x = self.f(self.x)
+    def step(self, *f_args):
+        self.x = self.f(self.x, *f_args)
 
-    def read(self, R):
-        y = self.h(self.x)
+    def read(self, R, *h_args):
+        y = self.h(self.x, *h_args)
         noise = rnd.multivariate_normal(np.zeros(len(R)), R).reshape(-1, 1)
         return y + noise
 
