@@ -110,14 +110,36 @@ def estimate_noise_approx(G, H, P, residual_type="prior"):
     return R
 
 
-def estimate_noise_extended(C_arr, K, F, H_arr):
+def estimate_noise_extended(C_arr, K, F_arr, H_arr):
     """estimate using adapted version for EKF
+    Args:
+        C_arr (ndarray): The list of innovation correlation estimates
+        K (ndarray): Kalman gain
+        F_arr (ndarray): Update matrix list (starting with oldest)
+        H_arr (ndarray): Measurement matrix list
+
+    Returns:
+        ndarray: The estimated measurement noise covariance matrix
     """
     N = len(C_arr)
+
+    if H_arr.ndim == 3:
+        A = construct_A_nonlinear_H(N, K, F_arr, H_arr)
+        num_observations = H_arr[0].shape[0]
+    elif F_arr.ndim == 3:
+        A = construct_A_nonlinear_F(N, K, F_arr, H_arr)
+        num_observations = H_arr.shape[0]
+
+    C_stacked = C_arr[1:].reshape((-1, num_observations))
+    MH = np.dot(K, C_arr[0]) + np.dot(pinv(A), C_stacked)
+    R = C_arr[0] - np.dot(H_arr[0], MH)
+    return R
+
+
+def construct_A_nonlinear_H(N, K, F, H_arr):
     num_observations = H_arr[0].shape[0]
     num_states = F.shape[0]
 
-    # construct matrix A
     A = np.ndarray((0, num_observations, num_states))
     # product = Product{F(I-KH[n])}
     product = np.eye(num_states)
@@ -132,7 +154,25 @@ def estimate_noise_extended(C_arr, K, F, H_arr):
         A = np.vstack((A, [entry]))
 
     A = A.reshape((-1, num_states))
-    C_stacked = C_arr[1:].reshape((-1, num_observations))
-    MH = np.dot(K, C_arr[0]) + np.dot(pinv(A), C_stacked)
-    R = C_arr[0] - np.dot(H_arr[0], MH)
-    return R
+    return A
+
+
+def construct_A_nonlinear_F(N, K, F_arr, H):
+    num_observations = H.shape[0]
+    num_states = F_arr[0].shape[0]
+
+    A = np.ndarray((0, num_observations, num_states))
+    # product = Product{F[n](I-KH)}
+    product = np.eye(num_states)
+    for n in range(N - 1):
+        if n != 0:
+            # F * (I - K*H[n])
+            bracket = np.dot(F_arr[n], np.eye(num_states) - np.dot(K, H))
+            # watch out for order of multiplication: F[n]...F[0]
+            product = np.dot(bracket, product)
+        entry = np.dot(H, product)
+        entry = np.dot(entry, F_arr[-1])
+        A = np.vstack((A, [entry]))
+
+    A = A.reshape((-1, num_states))
+    return A
