@@ -115,7 +115,7 @@ def estimate_noise_extended(C_arr, K, F_arr, H_arr):
     Args:
         C_arr (ndarray): The list of innovation correlation estimates
         K (ndarray): Kalman gain
-        F_arr (ndarray): Update matrix list (starting with oldest)
+        F_arr (ndarray): Update matrix list (starting with most recent)
         H_arr (ndarray): Measurement matrix list
 
     Returns:
@@ -147,8 +147,8 @@ def construct_A_nonlinear_H(N, K, F, H_arr):
         if n != 0:
             # F * (I - K*H[n])
             bracket = np.dot(F, np.eye(num_states) - np.dot(K, H_arr[n]))
-            # watch out for order of multiplication: H[n]...H[0]
-            product = np.dot(bracket, product)
+            # watch out for order of multiplication: H[0]...H[n]
+            product = np.dot(product, bracket)
         entry = np.dot(H_arr[0], product)
         entry = np.dot(entry, F)
         A = np.vstack((A, [entry]))
@@ -168,10 +168,10 @@ def construct_A_nonlinear_F(N, K, F_arr, H):
         if n != 0:
             # F * (I - K*H[n])
             bracket = np.dot(F_arr[n], np.eye(num_states) - np.dot(K, H))
-            # watch out for order of multiplication: F[n]...F[0]
-            product = np.dot(bracket, product)
+            # watch out for order of multiplication: F[0]...F[n]
+            product = np.dot(product, bracket)
         entry = np.dot(H, product)
-        entry = np.dot(entry, F_arr[-1])
+        entry = np.dot(entry, F_arr[0])
         A = np.vstack((A, [entry]))
 
     A = A.reshape((-1, num_states))
