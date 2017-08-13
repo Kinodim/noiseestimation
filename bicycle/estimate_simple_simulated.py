@@ -9,18 +9,19 @@ from noiseestimation.noiseestimator import (
     estimate_noise,
     estimate_noise_approx,
     estimate_noise_mehra,
+    estimate_noise_extended
 )
 
 # parameters
-num_samples = 500
+num_samples = 600
 used_taps = num_samples / 2
 dt = 0.1
-measurement_var = 0.001
+measurement_var = 0.01
 var_vel = 0.001
 var_steer = 0.0001
 R_proto = np.array([[1, 0],
                     [0, 1]])
-filter_misestimation_factor = 20
+filter_misestimation_factor = 1
 turning_threshold_angle = 0.001
 wheelbase = 1
 
@@ -76,9 +77,9 @@ def setup():
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [R_proto * measurement_var] * num_samples
-    readings, truths, filtered, residuals, Ps = [], [], [], [], []
-    cmd = np.array([[0.1],
-                    [0.2]])
+    readings, truths, filtered, residuals, Ps, Fs = [], [], [], [], [], []
+    cmd = np.array([[1],
+                    [0.1]])
     for R in Rs:
         sim.step(cmd)
         reading = sim.read(R)
@@ -89,20 +90,24 @@ def filtering(sim, tracker):
         filtered.append(tracker.x)
         Ps.append(tracker.P)
         residuals.append(tracker.y)
+        Fs.append(tracker.F)
 
     readings = np.asarray(readings)
     truths = np.asarray(truths)
     filtered = np.asarray(filtered)
     Ps = np.asarray(Ps)
     residuals = np.asarray(residuals)
-    return readings, truths, filtered, residuals, Ps
+    Fs = np.asarray(Fs)
+    return readings, truths, filtered, residuals, Ps, Fs
 
 
-def perform_estimation(residuals, tracker, H):
+def perform_estimation(residuals, tracker, H, F_arr):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
     R = estimate_noise(
         correlation, tracker.K, tracker.F, H)
+    R_extended = estimate_noise_extended(
+        correlation, tracker.K, F_arr, H)
     R_mehra = estimate_noise_mehra(
         correlation, tracker.K, tracker.F, H)
     R_approx = estimate_noise_approx(
@@ -111,6 +116,8 @@ def perform_estimation(residuals, tracker, H):
     print("Truth:\n", truth)
     print("Estimation:\n", R)
     print("Error:\n", matrix_error(R, truth))
+    print("Extended Estimation:\n", R_extended)
+    print("Error:\n", matrix_error(R_extended, truth))
     print("Mehra estimation:\n", R_mehra)
     print("Error:\n", matrix_error(R_mehra, truth))
     print("Approximated estimation:\n", R_approx)
@@ -148,8 +155,8 @@ def plot_results(readings, filtered, truths, Ps):
 
 def run_tracker():
     sim, tracker = setup()
-    readings, truths, filtered, residuals, Ps = filtering(sim, tracker)
-    perform_estimation(residuals, tracker, tracker.H)
+    readings, truths, filtered, residuals, Ps, Fs = filtering(sim, tracker)
+    perform_estimation(residuals, tracker, tracker.H, Fs[::-1])
     plot_results(readings, filtered, truths, Ps)
 
 
