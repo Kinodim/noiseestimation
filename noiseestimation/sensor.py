@@ -3,8 +3,7 @@ import numpy.random as rnd
 
 
 class Sensor:
-    """
-    TODO DOCU
+    """Sensor class using an internal state space representation
     """
 
     def __init__(self, x0, f, h):
@@ -22,8 +21,7 @@ class Sensor:
 
 
 class LinearSensor(Sensor):
-    """
-    TODO DOCU
+    """Class for sensors with linear update and measurement
     """
 
     def __init__(self, x0, F, H):
