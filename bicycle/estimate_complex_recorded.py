@@ -3,12 +3,16 @@ from copy import copy
 from matplotlib import pyplot as plt
 from noiseestimation.playback_sensor import PlaybackSensor
 from complex_bicycle_ekf import ComplexBicycleEKF
+from noiseestimation.correlator import Correlator
+from noiseestimation.noiseestimator import estimate_noise_mehra, estimate_noise_approx
 
 # parameters
-measurement_var = 0.001
-sim_var = 0.000
-num_samples = 11670
-# num_samples = 4167
+skip_samples = 500
+used_taps = 100
+measurement_var = 1e-4
+sim_var = 0.01
+num_samples = skip_samples + 300
+# num_samples = 11670
 dt = 0.01
 
 
@@ -17,7 +21,7 @@ def setup():
                          ["fStwAng", "fVx", "fYawrate"])
     # set up kalman filter
     tracker = ComplexBicycleEKF(dt)
-    tracker.R = measurement_var
+    tracker.R = sim_var + measurement_var
     tracker.x = np.array([[0, 0]]).T
     tracker.P = np.eye(2) * 500
 
@@ -27,7 +31,7 @@ def setup():
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [np.eye(1) * sim_var] * num_samples
-    readings, filtered, Ps = [], [], []
+    readings, filtered, residuals, Ps = [], [], [], []
     for R in Rs:
         time, reading = sim.read(R)
         controls = reading[0:2]
@@ -37,11 +41,22 @@ def filtering(sim, tracker):
         readings.append(reading)
         filtered.append(copy(tracker.x))
         Ps.append(copy(tracker.P))
+        residuals.append(tracker.y)
 
     readings = np.asarray(readings)
     filtered = np.asarray(filtered)
+    residuals = np.asarray(residuals)
     Ps = np.asarray(Ps)
-    return readings, filtered, Ps
+    return readings, filtered, residuals, Ps
+
+
+def perform_estimation(residuals, tracker):
+    cor = Correlator(residuals)
+    C_arr = cor.autocorrelation(used_taps)
+    R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
+    print(R)
+    R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
+    print(R_approx)
 
 
 def plot_results(readings, filtered, Ps):
@@ -100,8 +115,10 @@ def plot_position(readings, filtered):
 
 def run_tracker():
     sim, tracker = setup()
-    readings, filtered, Ps = filtering(sim, tracker)
-    plot_results(readings, filtered, Ps)
+    readings, filtered, residuals, Ps = filtering(sim, tracker)
+    perform_estimation(residuals[skip_samples:], tracker)
+
+    # plot_results(readings, filtered, Ps)
 
 
 if __name__ == "__main__":
