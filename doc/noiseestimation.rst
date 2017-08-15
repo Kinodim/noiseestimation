@@ -12,10 +12,10 @@ noiseestimation\.correlator module
     :undoc-members:
     :show-inheritance:
 
-noiseestimation\.noiseestimator module
+noiseestimation\.estimation module
 --------------------------------------
 
-.. automodule:: noiseestimation.noiseestimator
+.. automodule:: noiseestimation.estimation
     :members:
     :undoc-members:
     :show-inheritance:
