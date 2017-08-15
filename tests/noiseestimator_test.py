@@ -1,5 +1,5 @@
 import numpy as np
-from noiseestimation.noiseestimator import (
+from noiseestimation.estimation import (
     estimate_noise,
     estimate_noise_approx,
     estimate_noise_mehra,

@@ -6,7 +6,7 @@ from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
 from noiseestimation.sensor import LinearSensor
 from noiseestimation.correlator import Correlator
-from noiseestimation.noiseestimator import estimate_noise
+from noiseestimation.estimation import estimate_noise
 
 
 # parameters

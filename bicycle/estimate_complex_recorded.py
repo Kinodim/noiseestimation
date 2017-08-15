@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from noiseestimation.playback_sensor import PlaybackSensor
 from complex_bicycle_ekf import ComplexBicycleEKF
 from noiseestimation.correlator import Correlator
-from noiseestimation.noiseestimator import estimate_noise_mehra, estimate_noise_approx
+from noiseestimation.estimation import estimate_noise_mehra, estimate_noise_approx
 
 # parameters
 skip_samples = 500
