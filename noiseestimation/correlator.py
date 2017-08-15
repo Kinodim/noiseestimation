@@ -4,7 +4,7 @@ import itertools
 from multiprocessing import Pool
 
 
-def correlate(args):
+def __correlate(args):
     data = args[0]
     shift = args[1]
     c = np.zeros((data.shape[1], data.shape[1]))
@@ -41,7 +41,7 @@ class Correlator:
         pool = Pool(processes)
         shifts = range(lags + 1)
         args = zip(itertools.repeat(self.values), shifts)
-        results = pool.map(correlate, args)
+        results = pool.map(__correlate, args)
         pool.close()
         pool.join()
         return np.asarray(results)

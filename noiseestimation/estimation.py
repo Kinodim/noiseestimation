@@ -124,10 +124,10 @@ def estimate_noise_extended(C_arr, K, F_arr, H_arr):
     N = len(C_arr)
 
     if H_arr.ndim == 3:
-        A = construct_A_nonlinear_H(N, K, F_arr, H_arr)
+        A = __construct_A_nonlinear_H(N, K, F_arr, H_arr)
         num_observations = H_arr[0].shape[0]
     elif F_arr.ndim == 3:
-        A = construct_A_nonlinear_F(N, K, F_arr, H_arr)
+        A = __construct_A_nonlinear_F(N, K, F_arr, H_arr)
         num_observations = H_arr.shape[0]
 
     C_stacked = C_arr[1:].reshape((-1, num_observations))
@@ -136,7 +136,7 @@ def estimate_noise_extended(C_arr, K, F_arr, H_arr):
     return R
 
 
-def construct_A_nonlinear_H(N, K, F, H_arr):
+def __construct_A_nonlinear_H(N, K, F, H_arr):
     num_observations = H_arr[0].shape[0]
     num_states = F.shape[0]
 
@@ -157,7 +157,7 @@ def construct_A_nonlinear_H(N, K, F, H_arr):
     return A
 
 
-def construct_A_nonlinear_F(N, K, F_arr, H):
+def __construct_A_nonlinear_F(N, K, F_arr, H):
     num_observations = H.shape[0]
     num_states = F_arr[0].shape[0]
 
