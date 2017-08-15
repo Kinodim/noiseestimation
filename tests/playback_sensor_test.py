@@ -22,7 +22,7 @@ class TestPlaybackSensor:
         assert not hasattr(sensor, "data")
 
     def test_read__first_entry(self):
-        time, fields = self.sensor.read([[0]])
+        time, fields = self.sensor.read()
         assert time == pytest.approx(1484917519047638000)
         assert_array_almost_equal(fields,
                                   np.array([[0.],
