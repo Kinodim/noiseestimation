@@ -18,15 +18,16 @@ used_taps = 100
 measurement_var = 1e-3
 R_proto = np.array([[2, 0],
                     [0, 1]])
-sim_var = 0.01
-num_samples = skip_samples + 300
-# num_samples = 11670
+sim_var = 0.001
+# num_samples = skip_samples + 300
+num_samples = 11670
 dt = 0.01
 
 
 def setup():
     sim = PlaybackSensor("data/vehicle_state.json",
-                         ["fStwAng", "fAx", "fYawrate", "fVx"])
+                         fields=["fYawrate", "fVx"],
+                         control_fields=["fStwAng", "fAx"])
     # set up kalman filter
     tracker = ComplexBicycleVStateEKF(dt)
     tracker.R = sim_var + measurement_var
@@ -41,11 +42,11 @@ def filtering(sim, tracker):
     Rs = [R_proto * sim_var] * num_samples
     readings, filtered, residuals, Ps, Fs = [], [], [], [], []
     for R in Rs:
-        time, reading = sim.read([[0]])
-        controls = reading[0:2]
+        time, reading = sim.read()
+        controls = reading[2:]
         measurement_noise = rnd.multivariate_normal(
             np.zeros(len(R)), R).reshape(-1, 1)
-        measurement = reading[2:] + measurement_noise
+        measurement = reading[0:2] + measurement_noise
         # skip low velocities
         if measurement[1, 0] < 0.05:
             continue
@@ -56,12 +57,13 @@ def filtering(sim, tracker):
         Ps.append(copy(tracker.P))
         residuals.append(tracker.y)
         Fs.append(tracker.F)
-        if tracker.K[1, 1] > 10:
-            print(tracker.K[1, 1])
-            print(reading[3, 0])
-            print(tracker.P)
-            print(tracker.F)
-            print("-" * 15)
+        # Debug output for critical Kalman gain
+        # if tracker.K[1, 1] > 10:
+        #     print(tracker.K[1, 1])
+        #     print(reading[3, 0])
+        #     print(tracker.P)
+        #     print(tracker.F)
+        #     print("-" * 15)
 
     readings = np.asarray(readings)
     filtered = np.asarray(filtered)
@@ -106,7 +108,7 @@ def plot_filtered_values(readings, filtered, Ps):
         filtered[:, 1] * 180.0 / np.pi,
         'ro')
     axarr[1, 0].plot(
-        readings[:, 2] * 180.0 / np.pi,
+        readings[:, 0] * 180.0 / np.pi,
         'k-'
     )
     axarr[1, 1].set_title("Geschaetze Varianz der Gierrate")
@@ -116,7 +118,7 @@ def plot_filtered_values(readings, filtered, Ps):
 
     axarr[2, 0].set_title("Geschwindigkeit (m/s)")
     axarr[2, 0].plot(filtered[:, 2], 'bo')
-    axarr[2, 0].plot(readings[:, 3], 'k-')
+    axarr[2, 0].plot(readings[:, 1], 'k-')
     axarr[2, 1].set_title("Geschaetze Varianz der Geschwindigkeit")
     axarr[2, 1].plot(
         Ps[:, 2, 2]
@@ -148,10 +150,10 @@ def plot_position(readings, filtered):
 def run_tracker():
     sim, tracker = setup()
     readings, filtered, residuals, Ps, Fs = filtering(sim, tracker)
-    perform_estimation(residuals[skip_samples:], tracker,
-                       Fs[skip_samples:][::-1])
+    # perform_estimation(residuals[skip_samples:], tracker,
+    #                    Fs[skip_samples:][::-1])
 
-    # plot_results(readings, filtered, Ps)
+    plot_results(readings, filtered, Ps)
 
 
 if __name__ == "__main__":
