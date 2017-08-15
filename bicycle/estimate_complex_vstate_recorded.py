@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import numpy.random as rnd
 from copy import copy
@@ -7,6 +8,7 @@ from complex_bicycle_ekf import ComplexBicycleVStateEKF
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (
     estimate_noise_mehra,
+    estimate_noise_extended,
     estimate_noise_approx
 )
 
@@ -16,9 +18,9 @@ used_taps = 100
 measurement_var = 1e-3
 R_proto = np.array([[2, 0],
                     [0, 1]])
-sim_var = 0.
-# num_samples = skip_samples + 500
-num_samples = 11670
+sim_var = 0.01
+num_samples = skip_samples + 300
+# num_samples = 11670
 dt = 0.01
 
 
@@ -37,42 +39,48 @@ def setup():
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [R_proto * sim_var] * num_samples
-    readings, filtered, residuals, Ps = [], [], [], []
+    readings, filtered, residuals, Ps, Fs = [], [], [], [], []
     for R in Rs:
         time, reading = sim.read([[0]])
-        if reading[3, 0] < 0.05:
-            continue
         controls = reading[0:2]
         measurement_noise = rnd.multivariate_normal(
             np.zeros(len(R)), R).reshape(-1, 1)
         measurement = reading[2:] + measurement_noise
+        # skip low velocities
+        if measurement[1, 0] < 0.05:
+            continue
         tracker.predict(controls)
         tracker.update(measurement)
         readings.append(reading)
         filtered.append(copy(tracker.x))
         Ps.append(copy(tracker.P))
         residuals.append(tracker.y)
-        if tracker.K[1,1] > 10:
-            print(tracker.K[1,1])
+        Fs.append(tracker.F)
+        if tracker.K[1, 1] > 10:
+            print(tracker.K[1, 1])
             print(reading[3, 0])
             print(tracker.P)
             print(tracker.F)
-            print("-" *15)
+            print("-" * 15)
 
     readings = np.asarray(readings)
     filtered = np.asarray(filtered)
     residuals = np.asarray(residuals)
     Ps = np.asarray(Ps)
-    return readings, filtered, residuals, Ps
+    Fs = np.asarray(Fs)
+    return readings, filtered, residuals, Ps, Fs
 
 
-def perform_estimation(residuals, tracker):
+def perform_estimation(residuals, tracker, F_arr):
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
+    print("Truth:\n", R_proto * sim_var)
     R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
-    print(R)
+    print("Mehra:\n", R)
     R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
-    print(R_approx)
+    print("Approximation:\n", R_approx)
+    R_extended = estimate_noise_extended(C_arr, tracker.K, F_arr, tracker.H)
+    print("Extended:\n", R_extended)
 
 
 def plot_results(readings, filtered, Ps):
@@ -139,10 +147,11 @@ def plot_position(readings, filtered):
 
 def run_tracker():
     sim, tracker = setup()
-    readings, filtered, residuals, Ps = filtering(sim, tracker)
-    # perform_estimation(residuals[skip_samples:], tracker)
+    readings, filtered, residuals, Ps, Fs = filtering(sim, tracker)
+    perform_estimation(residuals[skip_samples:], tracker,
+                       Fs[skip_samples:][::-1])
 
-    plot_results(readings, filtered, Ps)
+    # plot_results(readings, filtered, Ps)
 
 
 if __name__ == "__main__":
