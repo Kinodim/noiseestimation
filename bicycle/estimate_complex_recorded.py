@@ -1,16 +1,20 @@
+from __future__ import print_function
 import numpy as np
 from copy import copy
 from matplotlib import pyplot as plt
 from noiseestimation.playback_sensor import PlaybackSensor
 from complex_bicycle_ekf import ComplexBicycleEKF
 from noiseestimation.correlator import Correlator
-from noiseestimation.estimation import estimate_noise_mehra, estimate_noise_approx
+from noiseestimation.estimation import (
+    estimate_noise_mehra,
+    estimate_noise_approx
+)
 
 # parameters
 skip_samples = 500
-used_taps = 100
+used_taps = 150
 measurement_var = 1e-4
-sim_var = 0.01
+sim_var = 0.005
 num_samples = skip_samples + 300
 # num_samples = 11670
 dt = 0.01
@@ -34,6 +38,9 @@ def filtering(sim, tracker):
     readings, filtered, residuals, Ps = [], [], [], []
     for R in Rs:
         time, reading = sim.read(R)
+        # skip low velocities
+        if reading[1, 0] < 0.03:
+            continue
         controls = reading[0:2]
         psi_d = reading[2, 0]
         tracker.predict(controls)
@@ -53,10 +60,11 @@ def filtering(sim, tracker):
 def perform_estimation(residuals, tracker):
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
+    print("Truth:\n", sim_var)
     R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
-    print(R)
+    print("Mehra Method:\n", R)
     R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
-    print(R_approx)
+    print("Approximated Method:\n", R_approx)
 
 
 def plot_results(readings, filtered, Ps):
@@ -80,10 +88,10 @@ def plot_filtered_values(readings, filtered, Ps):
     axarr[2].set_title("Gierrate (deg/s)")
     axarr[2].plot(
         filtered[:, 1] * 180.0 / np.pi,
-        'ro')
+        'r-')
     axarr[2].plot(
         readings[:, 2] * 180.0 / np.pi,
-        'k-'
+        'kx'
     )
     axarr[3].set_title("Geschaetze Varianz der Gierrate")
     axarr[3].plot(
@@ -118,7 +126,7 @@ def run_tracker():
     readings, filtered, residuals, Ps = filtering(sim, tracker)
     perform_estimation(residuals[skip_samples:], tracker)
 
-    # plot_results(readings, filtered, Ps)
+    plot_results(readings, filtered, Ps)
 
 
 if __name__ == "__main__":
