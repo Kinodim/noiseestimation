@@ -132,7 +132,8 @@ def estimate_noise_extended(C_arr, K, F_arr, H_arr):
 
     C_stacked = C_arr[1:].reshape((-1, num_observations))
     MH = np.dot(K, C_arr[0]) + np.dot(pinv(A), C_stacked)
-    R = C_arr[0] - np.dot(H_arr[0], MH)
+    H = H_arr[0] if H_arr.ndim == 3 else H_arr
+    R = C_arr[0] - np.dot(H, MH)
     return R
 
 
@@ -166,7 +167,7 @@ def __construct_A_nonlinear_F(N, K, F_arr, H):
     product = np.eye(num_states)
     for n in range(N - 1):
         if n != 0:
-            # F * (I - K*H[n])
+            # F[n] * (I - K*H)
             bracket = np.dot(F_arr[n], np.eye(num_states) - np.dot(K, H))
             # watch out for order of multiplication: F[0]...F[n]
             product = np.dot(product, bracket)
