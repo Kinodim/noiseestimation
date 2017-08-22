@@ -98,7 +98,7 @@ class ComplexBicycleEKF(EKF):
 
 
 class ComplexBicycleVStateEKF(ComplexBicycleEKF):
-    var_acc = 4.0
+    var_acc = 0.1
 
     def __init__(self, dt):
         """Derives the ComplexBicycleEKF class to provide  a model in which
