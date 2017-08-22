@@ -4,8 +4,8 @@ import numpy as np
 
 class ComplexBicycleEKF(EKF):
     minimum_velocity = 1e-3
-    var_vel = 0.1
-    var_steer = 0.01
+    var_vel = 0.0001
+    var_steer = 0.0005
 
     # Car parameters
     steering_to_wheel_angle = 0.067
