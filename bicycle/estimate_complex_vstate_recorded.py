@@ -105,20 +105,20 @@ def plot_filtered_values(readings, filtered, Ps):
 
     axarr[1, 0].set_title("Gierrate (deg/s)")
     axarr[1, 0].plot(
-        filtered[:, 1] * 180.0 / np.pi,
-        'ro')
-    axarr[1, 0].plot(
         readings[:, 0] * 180.0 / np.pi,
-        'k-'
+        'kx'
     )
+    axarr[1, 0].plot(
+        filtered[:, 1] * 180.0 / np.pi,
+        'r-')
     axarr[1, 1].set_title("Geschaetze Varianz der Gierrate")
     axarr[1, 1].plot(
         Ps[:, 1, 1]
     )
 
     axarr[2, 0].set_title("Geschwindigkeit (m/s)")
-    axarr[2, 0].plot(filtered[:, 2], 'bo')
-    axarr[2, 0].plot(readings[:, 1], 'k-')
+    axarr[2, 0].plot(readings[:, 1], 'kx')
+    axarr[2, 0].plot(filtered[:, 2], 'b-')
     axarr[2, 1].set_title("Geschaetze Varianz der Geschwindigkeit")
     axarr[2, 1].plot(
         Ps[:, 2, 2]
