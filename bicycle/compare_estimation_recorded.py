@@ -1,6 +1,5 @@
 from __future__ import print_function
 import numpy as np
-import numpy.random as rnd
 import tqdm
 from multiprocessing import Pool
 from copy import copy
@@ -44,11 +43,9 @@ def filtering(sim, tracker):
     Rs = [R_proto * sim_var] * num_samples
     readings, filtered, residuals, Ps, Fs, Ks = [], [], [], [], [], []
     for R in Rs:
-        time, reading = sim.read()
+        time, reading = sim.read(R)
+        measurement = reading[0:2]
         controls = reading[2:]
-        measurement_noise = rnd.multivariate_normal(
-            np.zeros(len(R)), R).reshape(-1, 1)
-        measurement = reading[0:2] + measurement_noise
         # skip low velocities
         if measurement[1, 0] < 0.05:
             continue
