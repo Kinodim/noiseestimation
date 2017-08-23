@@ -80,7 +80,8 @@ def setup():
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [R_proto * measurement_var] * num_samples
-    readings, truths, filtered, residuals, Ps, Fs = [], [], [], [], [], []
+    readings, truths, filtered, residuals, Ps, Fs, Ks = (
+        [], [], [], [], [], [], [])
     cmd = np.array([[0.5],
                     [0.2]])
     for R in Rs:
@@ -94,6 +95,7 @@ def filtering(sim, tracker):
         Ps.append(tracker.P)
         residuals.append(tracker.y)
         Fs.append(tracker.F)
+        Ks.append(tracker.K)
 
     readings = np.asarray(readings)
     truths = np.asarray(truths)
@@ -101,16 +103,17 @@ def filtering(sim, tracker):
     Ps = np.asarray(Ps)
     residuals = np.asarray(residuals)
     Fs = np.asarray(Fs)
-    return readings, truths, filtered, residuals, Ps, Fs
+    Ks = np.asarray(Ks)
+    return readings, truths, filtered, residuals, Ps, Fs, Ks
 
 
-def perform_estimation(residuals, tracker, H, F_arr):
+def perform_estimation(residuals, tracker, H, F_arr, K_arr):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
     R = estimate_noise(
         correlation, tracker.K, tracker.F, H)
     R_extended = estimate_noise_extended(
-        correlation, tracker.K, F_arr, H)
+        correlation, K_arr, F_arr, H)
     R_mehra = estimate_noise_mehra(
         correlation, tracker.K, tracker.F, H)
     R_approx = estimate_noise_approx(
@@ -151,9 +154,11 @@ def plot_results(readings, filtered, truths, Ps):
 
 def run_tracker(dummy):
     sim, tracker = setup()
-    readings, truths, filtered, residuals, Ps, Fs = filtering(sim, tracker)
+    readings, truths, filtered, residuals, Ps, Fs, Ks = filtering(sim, tracker)
+    used_steps = 2 * used_taps
     errors = perform_estimation(
-        residuals[-2 * used_taps:], tracker, tracker.H, Fs[::-1])
+        residuals[-used_steps:], tracker, tracker.H,
+        Fs[-used_steps:], Ks[-used_steps:])
     # plot_results(readings, filtered, truths, Ps)
     return errors
 
