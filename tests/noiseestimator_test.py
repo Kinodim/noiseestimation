@@ -31,7 +31,7 @@ class TestNoiseEstimator:
         assert MH_T.shape == (2, 1)
 
     def test_approximate_estimate(self):
-        G = [31.371682426081264]
+        G = [[31.371682426081264]]
         H = np.array([[1, 0]])
         P = np.array([[1, 0.2],
                       [0, 0.1]])
