@@ -66,8 +66,8 @@ def estimate_noise_mehra(C_arr, K, F, H):
         entry = np.dot(H, inner_bracket)
         entry = np.dot(entry, F)
         A = np.vstack((A, [entry]))
-
     A = A.reshape((-1, num_states))
+
     C_stacked = C_arr[1:].reshape((-1, num_observations))
     MH = np.dot(K, C_arr[0]) + np.dot(pinv(A), C_stacked)
     R = C_arr[0] - np.dot(H, MH)
@@ -99,7 +99,7 @@ def estimate_noise_approx(G, H, P, residual_type="prior"):
 
     """
 
-    R = G
+    R = np.copy(G)
     if residual_type == "prior":
         R -= np.dot(H, np.dot(P, np.transpose(H)))
     elif residual_type == "posterior":
@@ -132,6 +132,7 @@ def estimate_noise_extended(C_arr, K, F, H):
     F = __reverse_or_create_list(F, N)
     H = __reverse_or_create_list(H, N)
 
+    # construct matrix A
     num_observations = H[0].shape[0]
     num_states = F[0].shape[0]
     A = np.ndarray((0, num_observations, num_states))
@@ -146,7 +147,6 @@ def estimate_noise_extended(C_arr, K, F, H):
         entry = np.dot(H[0], product)
         entry = np.dot(entry, F[0])
         A = np.vstack((A, [entry]))
-
     A = A.reshape((-1, num_states))
 
     C_stacked = C_arr[1:].reshape((-1, num_observations))
@@ -159,5 +159,5 @@ def __reverse_or_create_list(x, N):
     if x.ndim == 3:
         x = x[::-1]
     else:
-        x = [x] * (N - 1)
+        x = np.asarray([x] * (N - 1))
     return x
