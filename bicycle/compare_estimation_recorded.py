@@ -42,7 +42,7 @@ def setup():
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [R_proto * sim_var] * num_samples
-    readings, filtered, residuals, Ps, Fs = [], [], [], [], []
+    readings, filtered, residuals, Ps, Fs, Ks = [], [], [], [], [], []
     for R in Rs:
         time, reading = sim.read()
         controls = reading[2:]
@@ -59,6 +59,7 @@ def filtering(sim, tracker):
         Ps.append(copy(tracker.P))
         residuals.append(tracker.y)
         Fs.append(tracker.F)
+        Ks.append(tracker.K)
         # Debug output for critical Kalman gain
         # if tracker.K[1, 1] > 10:
         #     print(tracker.K[1, 1])
@@ -72,14 +73,15 @@ def filtering(sim, tracker):
     residuals = np.asarray(residuals)
     Ps = np.asarray(Ps)
     Fs = np.asarray(Fs)
-    return readings, filtered, residuals, Ps, Fs
+    Ks = np.asarray(Ks)
+    return readings, filtered, residuals, Ps, Fs, Ks
 
 
 def matrix_error(estimate, truth):
     return np.sqrt(np.sum(np.square(truth - estimate)))
 
 
-def perform_estimation(residuals, tracker, F_arr):
+def perform_estimation(residuals, tracker, F_arr, Ks):
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
     truth = R_proto * sim_var
@@ -87,7 +89,7 @@ def perform_estimation(residuals, tracker, F_arr):
     error_mehra = matrix_error(R, truth)
     R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
     error_approx = matrix_error(R_approx, truth)
-    R_extended = estimate_noise_extended(C_arr, tracker.K, F_arr, tracker.H)
+    R_extended = estimate_noise_extended(C_arr, Ks, F_arr, tracker.H)
     error_extended = matrix_error(R_extended, truth)
     return (error_mehra, error_approx, error_extended)
 
@@ -156,9 +158,9 @@ def plot_position(readings, filtered):
 
 def run_tracker(dummy):
     sim, tracker = setup()
-    readings, filtered, residuals, Ps, Fs = filtering(sim, tracker)
+    readings, filtered, residuals, Ps, Fs, Ks = filtering(sim, tracker)
     errors = perform_estimation(residuals[skip_samples:], tracker,
-                                Fs[skip_samples:][::-1])
+                                Fs[skip_samples:], Ks[skip_samples:])
     return errors
 
 
