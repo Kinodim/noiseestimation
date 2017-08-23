@@ -1,6 +1,5 @@
 from __future__ import print_function
 import numpy as np
-import numpy.random as rnd
 from copy import copy
 from matplotlib import pyplot as plt
 from noiseestimation.playback_sensor import PlaybackSensor
@@ -19,8 +18,8 @@ measurement_var = 1e-3
 R_proto = np.array([[2, 0],
                     [0, 1]])
 sim_var = 0.001
-# num_samples = skip_samples + 300
-num_samples = 11670
+num_samples = skip_samples + 300
+# num_samples = 11670
 dt = 0.01
 
 
@@ -42,11 +41,9 @@ def filtering(sim, tracker):
     Rs = [R_proto * sim_var] * num_samples
     readings, filtered, residuals, Ps, Fs = [], [], [], [], []
     for R in Rs:
-        time, reading = sim.read()
+        time, reading = sim.read(R)
+        measurement = reading[0:2]
         controls = reading[2:]
-        measurement_noise = rnd.multivariate_normal(
-            np.zeros(len(R)), R).reshape(-1, 1)
-        measurement = reading[0:2] + measurement_noise
         # skip low velocities
         if measurement[1, 0] < 0.05:
             continue
