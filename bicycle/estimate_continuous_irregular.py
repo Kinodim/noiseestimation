@@ -108,9 +108,9 @@ def perform_estimation(residuals, tracker, F_arr, K_arr):
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
     # R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
-    # R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
-    R_extended = estimate_noise_extended(C_arr, K_arr, F_arr, tracker.H)
-    return R_extended
+    R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
+    # R_extended = estimate_noise_extended(C_arr, K_arr, F_arr, tracker.H)
+    return R_approx
 
 
 def plot_results(readings, filtered, Ps, meas_dts):
