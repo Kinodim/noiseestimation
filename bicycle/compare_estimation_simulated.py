@@ -8,7 +8,6 @@ from matplotlib import pyplot as plt
 from noiseestimation.sensor import Sensor
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (
-    estimate_noise,
     estimate_noise_approx,
     estimate_noise_mehra,
     estimate_noise_extended
@@ -110,8 +109,6 @@ def filtering(sim, tracker):
 def perform_estimation(residuals, tracker, H, F_arr, K_arr):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
-    R = estimate_noise(
-        correlation, tracker.K, tracker.F, H)
     R_extended = estimate_noise_extended(
         correlation, K_arr, F_arr, H)
     R_mehra = estimate_noise_mehra(
@@ -119,11 +116,10 @@ def perform_estimation(residuals, tracker, H, F_arr, K_arr):
     R_approx = estimate_noise_approx(
         correlation[0], H, tracker.P)
     truth = R_proto * measurement_var
-    error_standard = matrix_error(R, truth)
     error_extended = matrix_error(R_extended, truth)
     error_mehra = matrix_error(R_mehra, truth)
     error_approx = matrix_error(R_approx, truth)
-    return (error_standard, error_extended, error_mehra, error_approx)
+    return (error_extended, error_mehra, error_approx)
 
 
 def plot_results(readings, filtered, truths, Ps):
@@ -180,15 +176,12 @@ if __name__ == "__main__":
     # ddof = 1 assures an unbiased estimate
     variances = np.var(errors_arr, axis=0, ddof=1)
     print("-" * 20)
-    print("Standard estimation:")
+    print("Extended estimation:")
     print("\tAverage Error: %.6f" % avg_errors[0])
     print("\tError variance: %.6f" % variances[0])
-    print("Extended estimation:")
+    print("Mehra estimation:")
     print("\tAverage Error: %.6f" % avg_errors[1])
     print("\tError variance: %.6f" % variances[1])
-    print("Mehra estimation:")
+    print("Approximate estimation:")
     print("\tAverage Error: %.6f" % avg_errors[2])
     print("\tError variance: %.6f" % variances[2])
-    print("Approximate estimation:")
-    print("\tAverage Error: %.6f" % avg_errors[3])
-    print("\tError variance: %.6f" % variances[3])
