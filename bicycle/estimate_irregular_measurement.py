@@ -59,8 +59,9 @@ def filtering(sim, tracker):
     while time - init_time < sim_time:
         while True:
             next_time, next_meas = sim.read(R)
-            if reading[1, 0] > vel_threshold:
+            if next_meas[1, 0] > vel_threshold:
                 break
+            print("skipped due to vel")
         next_time *= 1e-9
         while time < next_time:
             tracker.predict(controls)
