@@ -12,7 +12,7 @@ from noiseestimation.estimation import (
 )
 
 # parameters
-skip_samples = 500
+skip_samples = 600
 used_taps = 100
 measurement_var = 1e-5
 R_proto = np.array([[1, 0],
@@ -63,8 +63,10 @@ def filtering(sim, tracker):
                 break
             print("skipped due to vel")
         next_time *= 1e-9
+        F_cumul = np.eye(3)
         while time < next_time:
             tracker.predict(controls)
+            F_cumul = np.dot(tracker.F, F_cumul)
             time += dt
             # filtered.append(copy(tracker.x))
             # Ps.append(copy(tracker.P))
@@ -78,7 +80,7 @@ def filtering(sim, tracker):
         filtered.append(copy(tracker.x))
         Ps.append(copy(tracker.P))
         residuals.append(tracker.y)
-        Fs.append(tracker.F)
+        Fs.append(F_cumul)
         Ks.append(tracker.K)
 
     readings = np.asarray(readings)
