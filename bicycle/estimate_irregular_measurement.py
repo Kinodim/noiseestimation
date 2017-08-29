@@ -14,15 +14,14 @@ from noiseestimation.estimation import (
 # parameters
 skip_samples = 500
 used_taps = 100
-measurement_var = 1e-4
+measurement_var = 1e-5
 R_proto = np.array([[1, 0],
-                    [0, 2]])
-vel_threshold = 0.2
-sim_var = 0.0001
-num_samples = skip_samples + 300
+                    [0, 0.1]])
+vel_threshold = 0.05
+sim_var = 1e-3
 
-sim_time = 100  # in seconds
-dt = 0.0005
+sim_time = 8  # in seconds
+dt = 0.0001
 
 
 def setup():
@@ -31,11 +30,11 @@ def setup():
                          control_fields=["fStwAng", "fAx"])
     # set up kalman filter
     tracker = ComplexBicycleVStateEKF(dt)
-    tracker.R = sim_var + measurement_var
+    tracker.R = R_proto * (sim_var + measurement_var)
     tracker.x = np.array([[0, 0, 1e-3]]).T
     tracker.P = np.eye(3) * 500
     # control not as accurate anymore
-    tracker.var_steer = 0.005
+    tracker.var_steer = 0.0005
     tracker.var_acc = 0.5
 
     return sim, tracker
@@ -54,6 +53,7 @@ def filtering(sim, tracker):
     controls = reading[2:]
     tracker.update(measurement)
 
+    prev_time = init_time
     readings, filtered, residuals, Ps, Fs, Ks, meas_dts = (
         [], [], [], [], [], [], [])
     while time - init_time < sim_time:
@@ -62,7 +62,6 @@ def filtering(sim, tracker):
             if reading[1, 0] > vel_threshold:
                 break
         next_time *= 1e-9
-        meas_dts.append(next_time - time)
         while time < next_time:
             tracker.predict(controls)
             time += dt
@@ -71,6 +70,8 @@ def filtering(sim, tracker):
         measurement = next_meas[0:2]
         controls = next_meas[2:]
         tracker.update(measurement)
+        meas_dts.append(next_time - prev_time)
+        prev_time = next_time
 
         readings.append(next_meas)
         filtered.append(copy(tracker.x))
@@ -85,6 +86,7 @@ def filtering(sim, tracker):
     Ps = np.asarray(Ps)
     Fs = np.asarray(Fs)
     Ks = np.asarray(Ks)
+    meas_dts = meas_dts[1:]
     return readings, filtered, residuals, Ps, Fs, Ks, meas_dts
 
 
