@@ -18,10 +18,10 @@ runs = 400
 skip_samples = 500
 used_taps = 100
 measurement_var = 1e-3
-R_proto = np.array([[2, 0],
+R_proto = np.array([[1, 0],
                     [0, 1]])
-sim_var = 0.005
-num_samples = skip_samples + 300
+sim_var = 0.003
+num_samples = skip_samples + 200
 dt = 0.01
 
 
@@ -31,7 +31,7 @@ def setup():
                          control_fields=["fStwAng", "fAx"])
     # set up kalman filter
     tracker = ComplexBicycleVStateEKF(dt)
-    tracker.R = sim_var + measurement_var
+    tracker.R = R_proto * (sim_var + measurement_var)
     tracker.x = np.array([[0, 0, 1e-3]]).T
     tracker.P = np.eye(3) * 500
 
@@ -158,6 +158,7 @@ def run_tracker(dummy):
     readings, filtered, residuals, Ps, Fs, Ks = filtering(sim, tracker)
     errors = perform_estimation(residuals[skip_samples:], tracker,
                                 Fs[skip_samples:], Ks[skip_samples:])
+    # plot_filtered_values(readings, filtered, Ps)
     return errors
 
 
@@ -174,16 +175,18 @@ if __name__ == "__main__":
     pool.join()
 
     errors_arr = np.asarray(errors_arr)
-    avg_errors = np.sum(errors_arr, axis=0) / float(runs)
+    avg_errors = np.average(errors_arr, axis=0)
     # ddof = 1 assures an unbiased estimate
     variances = np.var(errors_arr, axis=0, ddof=1)
+    min_err = np.min(errors_arr, axis=0)
+    max_err = np.max(errors_arr, axis=0)
     print("-" * 20)
     print("Mehra estimation:")
-    print("\tAverage Error: %.6f" % avg_errors[0])
-    print("\tError variance: %.6f" % variances[0])
+    print("\tAverage Error: %.8f" % avg_errors[0])
+    print("\tError variance: %.8f" % variances[0])
     print("Approximate estimation:")
-    print("\tAverage Error: %.6f" % avg_errors[1])
-    print("\tError variance: %.6f" % variances[1])
+    print("\tAverage Error: %.8f" % avg_errors[1])
+    print("\tError variance: %.8f" % variances[1])
     print("Extended estimation:")
-    print("\tAverage Error: %.6f" % avg_errors[2])
-    print("\tError variance: %.6f" % variances[2])
+    print("\tAverage Error: %.8f" % avg_errors[2])
+    print("\tError variance: %.8f" % variances[2])
