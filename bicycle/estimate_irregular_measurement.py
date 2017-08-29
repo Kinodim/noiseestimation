@@ -93,7 +93,7 @@ def filtering(sim, tracker):
 def perform_estimation(residuals, tracker, F_arr, K_arr):
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
-    print("Truth:\n", R_proto * sim_var)
+    print("Simulated:\n", R_proto * sim_var)
     R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
     print("Mehra:\n", R)
     R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
@@ -104,7 +104,7 @@ def perform_estimation(residuals, tracker, F_arr, K_arr):
 
 def plot_results(readings, filtered, Ps, meas_dts):
     plot_filtered_values(readings, filtered, Ps)
-    plot_position(readings, filtered, meas_dts)
+    # plot_position(readings, filtered, meas_dts)
 
 
 def plot_filtered_values(readings, filtered, Ps):
@@ -118,7 +118,6 @@ def plot_filtered_values(readings, filtered, Ps):
     axarr[0, 1].plot(
         Ps[:, 0, 0]
     )
-    axarr[0, 1].set_ylim((0, 0.005))
 
     axarr[1, 0].set_title("Gierrate (deg/s)")
     axarr[1, 0].plot(
@@ -132,7 +131,6 @@ def plot_filtered_values(readings, filtered, Ps):
     axarr[1, 1].plot(
         Ps[:, 1, 1]
     )
-    axarr[1, 1].set_ylim((0, 0.005))
 
     axarr[2, 0].set_title("Geschwindigkeit (m/s)")
     axarr[2, 0].plot(readings[:, 1], 'kx')
@@ -169,8 +167,8 @@ def run_tracker():
     sim, tracker = setup()
     readings, filtered, residuals, Ps, Fs, Ks, meas_dts = filtering(
         sim, tracker)
-    # perform_estimation(residuals[skip_samples:], tracker,
-    #                    Fs[skip_samples:], Ks[skip_samples:])
+    perform_estimation(residuals[skip_samples:], tracker,
+                       Fs[skip_samples:], Ks[skip_samples:])
 
     plot_results(readings, filtered, Ps, meas_dts)
 
