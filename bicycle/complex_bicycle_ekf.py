@@ -2,6 +2,40 @@ from filterpy.kalman import ExtendedKalmanFilter as EKF
 import numpy as np
 
 
+def steering_to_wheel_angle(angle):
+    min_steering_wheel_angle = -8.737119
+    max_steering_wheel_angle = 8.676032
+    steering_to_front_values = [-0.628560, -0.614293, -0.600124, -0.586052,
+                                -0.572073, -0.558187, -0.544392, -0.530684,
+                                -0.517063, -0.503527, -0.490072, -0.476699,
+                                -0.463404, -0.450185, -0.437041, -0.423969,
+                                -0.410968, -0.398036, -0.385170, -0.372370,
+                                -0.359631, -0.346954, -0.334335, -0.321774,
+                                -0.309267, -0.296812, -0.284409, -0.272055,
+                                -0.259748, -0.247485, -0.235266, -0.223088,
+                                -0.210948, -0.198846, -0.186779, -0.174745,
+                                -0.162743, -0.150769, -0.138823, -0.126902,
+                                -0.115005, -0.103128, -0.091272, -0.079432,
+                                -0.067608, -0.055797, -0.043998, -0.032208,
+                                -0.020426, -0.008650, 0.003123, 0.014895,
+                                0.026666, 0.038440, 0.050219, 0.062003,
+                                0.073796, 0.085599, 0.097415, 0.109244,
+                                0.121090, 0.132953, 0.144837, 0.156743,
+                                0.168672, 0.180628, 0.192612, 0.204625,
+                                0.216671, 0.228750, 0.240865, 0.253018,
+                                0.265211, 0.277445, 0.289723, 0.302047,
+                                0.314419, 0.326840, 0.339313, 0.351839,
+                                0.364421, 0.377061, 0.389760, 0.402520,
+                                0.415344, 0.428233, 0.441190, 0.454215,
+                                0.467313, 0.480483, 0.493729, 0.507052,
+                                0.520454, 0.533938, 0.547504, 0.561156,
+                                0.574895, 0.588723, 0.602641, 0.616653]
+    steering_values = np.linspace(min_steering_wheel_angle,
+                                  max_steering_wheel_angle,
+                                  len(steering_to_front_values))
+    return np.interp(angle, steering_values, steering_to_front_values)
+
+
 class ComplexBicycleEKF(EKF):
     minimum_velocity = 1e-3
     var_vel = 0.0001
@@ -136,7 +170,7 @@ class ComplexBicycleVStateEKF(ComplexBicycleEKF):
         beta = self.x[0, 0]
         psi_d = self.x[1, 0]
         v = self.x[2, 0]
-        delta = u[0, 0] * self.steering_to_wheel_angle
+        delta = steering_to_wheel_angle(u[0, 0])
         a = u[1, 0]
 
         self.x[0, 0] = beta*(-self.dt*(self.c_h + self.c_v)/(self.m*v) + 1) + \
@@ -153,7 +187,7 @@ class ComplexBicycleVStateEKF(ComplexBicycleEKF):
         beta = self.x[0, 0]
         psi_d = self.x[1, 0]
         v = self.x[2, 0]
-        delta = u[0, 0] * self.steering_to_wheel_angle
+        delta = steering_to_wheel_angle(u[0, 0])
         F = np.array([[-self.dt*(self.c_h + self.c_v)/(self.m*v) + 1,
                        -self.dt*(1 + (-self.c_h*self.l_h +
                                       self.c_v*self.l_v)/(self.m*v**2)),
