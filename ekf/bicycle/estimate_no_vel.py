@@ -3,7 +3,7 @@ import numpy as np
 from copy import copy
 from matplotlib import pyplot as plt
 from noiseestimation.playback_sensor import PlaybackSensor
-from complex_bicycle_ekf import ComplexBicycleEKF
+from bicycle_ekf import BicycleEKF_noVel
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (
     estimate_noise_mehra,
@@ -24,7 +24,7 @@ def setup():
     sim = PlaybackSensor("data/vehicle_state.json",
                          ["fStwAng", "fVx", "fYawrate"])
     # set up kalman filter
-    tracker = ComplexBicycleEKF(dt)
+    tracker = BicycleEKF_noVel(dt)
     tracker.R = sim_var + measurement_var
     tracker.x = np.array([[0, 0]]).T
     tracker.P = np.eye(2) * 500

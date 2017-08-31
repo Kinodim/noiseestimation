@@ -1,11 +1,9 @@
 from __future__ import print_function
 import numpy as np
-import tqdm
-from multiprocessing import Pool
 from copy import copy
 from matplotlib import pyplot as plt
 from noiseestimation.playback_sensor import PlaybackSensor
-from complex_bicycle_ekf import ComplexBicycleVStateEKF
+from bicycle_ekf import BicycleEKF
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (
     estimate_noise_mehra,
@@ -14,14 +12,14 @@ from noiseestimation.estimation import (
 )
 
 # parameters
-runs = 400
 skip_samples = 500
 used_taps = 100
 measurement_var = 1e-3
-R_proto = np.array([[1, 0],
+R_proto = np.array([[2, 0],
                     [0, 1]])
-sim_var = 0.003
-num_samples = skip_samples + 200
+sim_var = 0.001
+num_samples = skip_samples + 300
+# num_samples = 11670
 dt = 0.01
 
 
@@ -30,8 +28,8 @@ def setup():
                          fields=["fYawrate", "fVx"],
                          control_fields=["fStwAng", "fAx"])
     # set up kalman filter
-    tracker = ComplexBicycleVStateEKF(dt)
-    tracker.R = R_proto * (sim_var + measurement_var)
+    tracker = BicycleEKF(dt)
+    tracker.R = sim_var + measurement_var
     tracker.x = np.array([[0, 0, 1e-3]]).T
     tracker.P = np.eye(3) * 500
 
@@ -74,21 +72,16 @@ def filtering(sim, tracker):
     return readings, filtered, residuals, Ps, Fs, Ks
 
 
-def matrix_error(estimate, truth):
-    return np.sqrt(np.sum(np.square(truth - estimate)))
-
-
-def perform_estimation(residuals, tracker, F_arr, Ks):
+def perform_estimation(residuals, tracker, F_arr, K_arr):
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
-    truth = R_proto * sim_var
+    print("Truth:\n", R_proto * sim_var)
     R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
-    error_mehra = matrix_error(R, truth)
+    print("Mehra:\n", R)
     R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
-    error_approx = matrix_error(R_approx, truth)
-    R_extended = estimate_noise_extended(C_arr, Ks, F_arr, tracker.H)
-    error_extended = matrix_error(R_extended, truth)
-    return (error_mehra, error_approx, error_extended)
+    print("Approximation:\n", R_approx)
+    R_extended = estimate_noise_extended(C_arr, K_arr, F_arr, tracker.H)
+    print("Extended:\n", R_extended)
 
 
 def plot_results(readings, filtered, Ps):
@@ -153,40 +146,14 @@ def plot_position(readings, filtered):
     plt.show()
 
 
-def run_tracker(dummy):
+def run_tracker():
     sim, tracker = setup()
     readings, filtered, residuals, Ps, Fs, Ks = filtering(sim, tracker)
-    errors = perform_estimation(residuals[skip_samples:], tracker,
-                                Fs[skip_samples:], Ks[skip_samples:])
-    # plot_filtered_values(readings, filtered, Ps)
-    return errors
+    perform_estimation(residuals[skip_samples:], tracker,
+                       Fs[skip_samples:], Ks[skip_samples:])
+
+    # plot_results(readings, filtered, Ps)
 
 
 if __name__ == "__main__":
-    pool = Pool(8)
-    args = [0] * runs
-    pbar = tqdm.tqdm(total=runs)
-    errors_arr = []
-    for errors in pool.imap_unordered(run_tracker, args, chunksize=2):
-        pbar.update()
-        errors_arr.append(errors)
-    pbar.close()
-    pool.close()
-    pool.join()
-
-    errors_arr = np.asarray(errors_arr)
-    avg_errors = np.average(errors_arr, axis=0)
-    # ddof = 1 assures an unbiased estimate
-    variances = np.var(errors_arr, axis=0, ddof=1)
-    min_err = np.min(errors_arr, axis=0)
-    max_err = np.max(errors_arr, axis=0)
-    print("-" * 20)
-    print("Mehra estimation:")
-    print("\tAverage Error: %.8f" % avg_errors[0])
-    print("\tError variance: %.8f" % variances[0])
-    print("Approximate estimation:")
-    print("\tAverage Error: %.8f" % avg_errors[1])
-    print("\tError variance: %.8f" % variances[1])
-    print("Extended estimation:")
-    print("\tAverage Error: %.8f" % avg_errors[2])
-    print("\tError variance: %.8f" % variances[2])
+    run_tracker()

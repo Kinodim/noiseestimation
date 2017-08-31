@@ -36,7 +36,7 @@ def steering_to_wheel_angle(angle):
     return np.interp(angle, steering_values, steering_to_front_values)
 
 
-class ComplexBicycleEKF(EKF):
+class BicycleEKF_noVel(EKF):
     minimum_velocity = 1e-3
     var_vel = 0.0001
     var_steer = 0.0005
@@ -131,7 +131,7 @@ class ComplexBicycleEKF(EKF):
         return B
 
 
-class ComplexBicycleVStateEKF(ComplexBicycleEKF):
+class BicycleEKF(BicycleEKF_noVel):
     var_acc = 0.1
 
     def __init__(self, dt):
