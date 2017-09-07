@@ -155,6 +155,13 @@ def estimate_noise_extended(C_arr, K, F, H):
     return np.absolute(R)
 
 
+def estimate_noise_ukf(C_0, P_zz, method="basic"):
+    if method == "basic":
+        return np.absolute(C_0 - P_zz)
+    else:
+        raise ValueError("Method %s not a valid option" % method)
+
+
 def __reverse_or_create_list(x, N):
     if x.ndim == 3:
         x = x[::-1]
