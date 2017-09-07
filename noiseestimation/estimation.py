@@ -71,7 +71,7 @@ def estimate_noise_mehra(C_arr, K, F, H):
     C_stacked = C_arr[1:].reshape((-1, num_observations))
     MH = np.dot(K, C_arr[0]) + np.dot(pinv(A), C_stacked)
     R = C_arr[0] - np.dot(H, MH)
-    return R
+    return np.absolute(R)
 
 
 def estimate_noise_approx(G, H, P, residual_type="prior"):
@@ -106,7 +106,7 @@ def estimate_noise_approx(G, H, P, residual_type="prior"):
         R += np.dot(H, np.dot(P, np.transpose(H)))
     else:
         raise ValueError("Residual type %s not a valid option" % residual_type)
-    return R
+    return np.absolute(R)
 
 
 def estimate_noise_extended(C_arr, K, F, H):
@@ -152,7 +152,7 @@ def estimate_noise_extended(C_arr, K, F, H):
     C_stacked = C_arr[1:].reshape((-1, num_observations))
     MH = np.dot(K[0], C_arr[0]) + np.dot(pinv(A), C_stacked)
     R = C_arr[0] - np.dot(H[0], MH)
-    return R
+    return np.absolute(R)
 
 
 def __reverse_or_create_list(x, N):
