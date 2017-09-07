@@ -74,7 +74,7 @@ def estimate_noise_mehra(C_arr, K, F, H):
     return np.absolute(R)
 
 
-def estimate_noise_approx(G, H, P, residual_type="prior"):
+def estimate_noise_approx(C_0, H, P, residual_type="prior"):
     """Approximates noise based on the innovation variance
 
     This function implements another approach proposed by Mehra.
@@ -99,7 +99,7 @@ def estimate_noise_approx(G, H, P, residual_type="prior"):
 
     """
 
-    R = np.copy(G)
+    R = np.copy(C_0)
     if residual_type == "prior":
         R -= np.dot(H, np.dot(P, np.transpose(H)))
     elif residual_type == "posterior":
