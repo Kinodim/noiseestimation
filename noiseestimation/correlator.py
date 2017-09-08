@@ -28,6 +28,10 @@ class Correlator:
     and Adaptive Kalman Filtering, Mehra 1970
     The alternative is to employ the Ljung-Box test as implemented in the
     statsmodel package
+
+
+    Args:
+        values (ndarray): Values on which to perform the calculations
     """
 
     def __init__(self, values):
@@ -38,6 +42,14 @@ class Correlator:
             self.values = self.values[:, np.newaxis, np.newaxis]
 
     def autocorrelation_multi(self, lags, processes=8):
+        """Performs the autocorrelation calculation in multiple threads
+
+        Args:
+            lags (int): Maximum lag by which the sequence is shifted
+            processes (int, optional): Number of threads to spawn, default is 8
+        Returns:
+            ndarray: Calculated array of correlations
+        """
         pool = Pool(processes)
         shifts = range(lags + 1)
         args = zip(itertools.repeat(self.values), shifts)
@@ -47,6 +59,13 @@ class Correlator:
         return np.asarray(results)
 
     def autocorrelation(self, lags):
+        """Calculates the autocorrelation of the given series
+
+        Args:
+            lags (int): Maximum lag by which the sequence is shifted
+        Returns:
+            ndarray: Calculated array of correlations
+        """
         C = []
         for k in range(lags + 1):
             c = np.zeros((self.values.shape[1], self.values.shape[1]))
@@ -57,6 +76,14 @@ class Correlator:
         return np.asarray(C)
 
     def autocorrelation_coefficients(self, lags):
+        """Calculates the normalized autocorrelation coefficients of
+        the given series
+
+        Args:
+            lags (int): Maximum lag by which the sequence is shifted
+        Returns:
+            ndarray: Calculated array of autocorrelation coefficients
+        """
         C = self.autocorrelation(lags)
         C_0_diagonals = np.diagonal(C[0]).reshape((-1, 1))
         denominator = np.sqrt(
