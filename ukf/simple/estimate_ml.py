@@ -7,7 +7,7 @@ from filterpy.kalman import UnscentedKalmanFilter as UKF
 from matplotlib import pyplot as plt
 from noiseestimation.sensor import Sensor
 from noiseestimation.correlator import Correlator
-from noiseestimation.estimation import estimate_noise_ukf
+from noiseestimation.estimation import estimate_noise_ukf_ml
 
 # parameters
 num_samples = 600
@@ -106,7 +106,7 @@ def filtering(sim, tracker):
 def perform_estimation(residuals, tracker):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
-    R = estimate_noise_ukf(correlation[0], tracker.Pz)
+    R = estimate_noise_ukf_ml(correlation[0], tracker.Pz)
     truth = R_proto * measurement_var
     error = matrix_error(R, truth)
     print("Truth:\n", truth)

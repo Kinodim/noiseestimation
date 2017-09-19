@@ -4,7 +4,7 @@ from noiseestimation.estimation import (
     estimate_noise_approx,
     estimate_noise_mehra,
     estimate_noise_extended,
-    estimate_noise_ukf
+    estimate_noise_ukf_ml
 )
 
 
@@ -78,5 +78,5 @@ class TestNoiseEstimator:
                           [-0.00366983, 0.01893147]])
         P_zz = np.asarray([[1.01043425e-02, 3.41826761e-05],
                            [3.41826761e-05, 1.00712847e-02]])
-        R = estimate_noise_ukf(C_0, P_zz)
+        R = estimate_noise_ukf_ml(C_0, P_zz)
         assert R.shape == (2, 2)

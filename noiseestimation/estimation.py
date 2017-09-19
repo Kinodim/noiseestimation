@@ -155,11 +155,17 @@ def estimate_noise_extended(C_arr, K, F, H):
     return np.absolute(R)
 
 
-def estimate_noise_ukf(C_0, P_zz, method="basic"):
-    if method == "basic":
-        return np.absolute(C_0 - P_zz)
-    else:
-        raise ValueError("Method %s not a valid option" % method)
+def estimate_noise_ukf_ml(C_0, P_zz):
+    """Estimates measurement noise using a maximum likelihood approach
+
+    Args:
+        C_0 (ndarray): residual covariance
+        P_zz (ndarray): predicted measurement covariance due to state covariance
+
+    Returns:
+        ndarray: The estimated noise covariance
+    """
+    return np.absolute(C_0 - P_zz)
 
 
 def __reverse_or_create_list(x, N):
