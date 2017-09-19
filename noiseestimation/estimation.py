@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.linalg import pinv
+from numpy.linalg import inv, pinv
 
 
 def estimate_noise(C_arr, K, F, H, return_state_covariance=False):
@@ -188,6 +188,16 @@ def estimate_noise_ukf_map(residual, P_zz, average_factor, old_estimate,
 
     return np.absolute(
         (1 - average_factor) * old_estimate + average_factor*new_estimate)
+
+
+def estimate_noise_ukf_scaling(C, P_zz, R):
+    # determine scaling factor
+    S_raw = np.dot((C - P_zz), inv(R))
+    # make entries positive
+    S = np.absolute(S_raw)
+    # delete entries not on diagonal
+    S = np.diag(np.diag(S))
+    return np.dot(S, R)
 
 
 def __reverse_or_create_list(x, N):
