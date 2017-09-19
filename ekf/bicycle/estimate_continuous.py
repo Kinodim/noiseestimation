@@ -22,7 +22,7 @@ measurement_var = 5e-5
 R_proto = np.array([[1, 0],
                     [0, 3]])
 filter_misestimation_factor = 1
-sim_var = 5e-4
+sim_var = 1e-3
 vel_threshold = 0.05
 
 dt = 0.0005
@@ -106,6 +106,7 @@ def filtering(sim, tracker, num_samples, init_time=None, init_control=None,
 
 
 def perform_estimation(residuals, tracker, F_arr, K_arr):
+    residuals = residuals - np.average(residuals, axis=0)
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
     # R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
@@ -226,7 +227,7 @@ def run_tracker():
     Rs = [tracker.R]
     Rs_estimated = [tracker.R]
     R_avg = tracker.R
-    sim_vars = np.linspace(0, 4e-3, num_windows)
+    sim_vars = [sim_var] * num_windows
     truths = []
     for i in range(num_windows):
         readings, filtered, residuals, Ps, Fs, Ks, time, controls = filtering(
@@ -252,7 +253,6 @@ def run_tracker():
     Rs = np.asarray(Rs)
     Rs_estimated = np.asarray(Rs_estimated)
     truths = np.asarray(truths)
-    print(truths)
 
     plot_noise_matrices_with_data(Rs, Rs_estimated, truths,
                                   total_filtered, total_readings)

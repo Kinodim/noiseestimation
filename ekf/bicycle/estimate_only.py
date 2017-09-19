@@ -105,6 +105,7 @@ def filtering(sim, tracker, num_samples, init_time=None, init_control=None):
 
 
 def perform_estimation(residuals, tracker, F_arr, K_arr):
+    residuals = residuals - np.average(residuals, axis=0)
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
     # R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
