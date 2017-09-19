@@ -4,7 +4,8 @@ from noiseestimation.estimation import (
     estimate_noise_approx,
     estimate_noise_mehra,
     estimate_noise_extended,
-    estimate_noise_ukf_ml
+    estimate_noise_ukf_ml,
+    estimate_noise_ukf_map
 )
 
 
@@ -73,10 +74,21 @@ class TestNoiseEstimator:
         R = estimate_noise_extended(C_arr, K, F, H_arr)
         assert R.shape == (1, 1)
 
-    def test_ukf_estimate(self):
+    def test_ukf_estimate_ml(self):
         C_0 = np.asarray([[0.04271917, -0.00366983],
                           [-0.00366983, 0.01893147]])
         P_zz = np.asarray([[1.01043425e-02, 3.41826761e-05],
                            [3.41826761e-05, 1.00712847e-02]])
         R = estimate_noise_ukf_ml(C_0, P_zz)
+        assert R.shape == (2, 2)
+
+    def test_ukf_estimate_map(self):
+        residual = np.array([[0.06583802],
+                             [0.30857565]])
+        P_zz = np.asarray([[1.01043425e-02, 3.41826761e-05],
+                           [3.41826761e-05, 1.00712847e-02]])
+        R = estimate_noise_ukf_map(residual, P_zz, 0.5, np.ones((2, 2)), False)
+        assert R.shape == (2, 2)
+
+        R = estimate_noise_ukf_map(residual, P_zz, 0.5, np.ones((2, 2)), True)
         assert R.shape == (2, 2)

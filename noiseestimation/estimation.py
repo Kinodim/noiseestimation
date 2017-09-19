@@ -168,6 +168,28 @@ def estimate_noise_ukf_ml(C_0, P_zz):
     return np.absolute(C_0 - P_zz)
 
 
+def estimate_noise_ukf_map(residual, P_zz, average_factor, old_estimate,
+                           assume_converged=False):
+    """Estimates measurement noise using a maximum a posteriori approach
+
+    Args:
+        residual (ndarray): Residual for current timestep
+        P_zz (ndarray): predicted measurement covariance due to state covariance
+        average_factor (float): Weight of new estimate
+        old_estimate (ndarray): Result of previous estimation
+        assume_converged (ndarray): Assume insignificant state covariance
+
+    Returns:
+        ndarray: The estimated noise covariance
+    """
+    new_estimate = residual * np.transpose(residual)
+    if not assume_converged:
+        new_estimate -= P_zz
+
+    return np.absolute(
+        (1 - average_factor) * old_estimate + average_factor*new_estimate)
+
+
 def __reverse_or_create_list(x, N):
     if x.ndim == 3:
         x = x[::-1]
