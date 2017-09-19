@@ -74,7 +74,7 @@ def estimate_noise_mehra(C_arr, K, F, H):
     return np.absolute(R)
 
 
-def estimate_noise_approx(C_0, H, P, residual_type="prior"):
+def estimate_noise_approx(C, H, P, residual_type="prior"):
     """Approximates noise based on the innovation variance
 
     This function implements another approach proposed by Mehra.
@@ -87,7 +87,7 @@ def estimate_noise_approx(C_0, H, P, residual_type="prior"):
 
 
     Args:
-        G (ndarray): Estimate of the autocorrelation of the innovations
+        C (ndarray): Estimate of the autocorrelation of the innovations
             with no time shift
         H (ndarray): Measurement matrix
         P (ndarray): Estimation covariance matrix
@@ -99,7 +99,7 @@ def estimate_noise_approx(C_0, H, P, residual_type="prior"):
 
     """
 
-    R = np.copy(C_0)
+    R = np.copy(C)
     if residual_type == "prior":
         R -= np.dot(H, np.dot(P, np.transpose(H)))
     elif residual_type == "posterior":
@@ -155,17 +155,17 @@ def estimate_noise_extended(C_arr, K, F, H):
     return np.absolute(R)
 
 
-def estimate_noise_ukf_ml(C_0, P_zz):
+def estimate_noise_ukf_ml(C, P_zz):
     """Estimates measurement noise using a maximum likelihood approach
 
     Args:
-        C_0 (ndarray): residual covariance
+        C (ndarray): residual covariance
         P_zz (ndarray): predicted measurement covariance due to state covariance
 
     Returns:
         ndarray: The estimated noise covariance
     """
-    return np.absolute(C_0 - P_zz)
+    return np.absolute(C - P_zz)
 
 
 def estimate_noise_ukf_map(residual, P_zz, average_factor, old_estimate,
