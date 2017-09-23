@@ -50,9 +50,10 @@ class BicycleUKF(UKF):
     i_sq = 1.7601
     J = m * i_sq   # moment of inertia
 
-    # Needed?
-    minimum_velocity = 1e-3
-    var_acc = 0.1
+    # Sigma points parameters
+    alpha = 1e-1
+    beta = 2.
+    kappa = 0.1
 
     def __init__(self, dt):
         """Derives the UKF class to implement the specific
@@ -70,7 +71,8 @@ class BicycleUKF(UKF):
         def h(x):
             return np.dot(H, x)
 
-        sigmas = MerweScaledSigmaPoints(3, alpha=.1, beta=2., kappa=1)
+        sigmas = MerweScaledSigmaPoints(3, alpha=self.alpha, beta=self.beta,
+                                        kappa=self.kappa)
         UKF.__init__(self, dim_x=3, dim_z=2,
                      fx=self.f_xu, hx=h, dt=dt, points=sigmas)
 

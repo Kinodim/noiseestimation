@@ -8,8 +8,8 @@ from bicycle_ukf import BicycleUKF
 # parameters
 skip_samples = 500
 used_taps = 100
-measurement_var = 5e-5
-R_proto = np.array([[2, 0],
+measurement_var = 1e-5
+R_proto = np.array([[1, 0],
                     [0, 1]])
 sim_var = 1e-4
 num_samples = skip_samples + 600
@@ -25,9 +25,9 @@ def setup():
     tracker = BicycleUKF(dt)
     Q_factor = np.array(1e-5)
     tracker.Q = np.diag([1, 1, 0.1] * Q_factor)
-    tracker.R = sim_var + measurement_var
-    tracker.x = np.array([0, 0, 1e-3]).T
-    tracker.P = np.eye(3) * 500
+    tracker.R = np.eye(2) * (sim_var + measurement_var) * 1
+    tracker.x = np.array([0, 0, 1]).T
+    tracker.P = np.eye(3) * 1e0
 
     return sim, tracker
 
@@ -36,27 +36,26 @@ def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [R_proto * sim_var] * num_samples
     readings, filtered, residuals, Ps, Fs, Ks = [], [], [], [], [], []
-    for R in Rs:
+    for idx, R in enumerate(Rs):
         time, reading = sim.read(R)
         measurement = reading[0:2]
         controls = reading[2:]
         # skip low velocities
-        if measurement[1, 0] < 0.2:
+        if measurement[1, 0] < 0.5:
             continue
         tracker.predict(fx_args=controls)
-        tracker.update(measurement[:, 0])
+        if idx % 1 == 0:
+            tracker.update(measurement[:, 0])
+
         readings.append(reading)
         filtered.append(copy(tracker.x[:, np.newaxis]))
         Ps.append(copy(tracker.P))
-        residuals.append(tracker.y)
-        Ks.append(tracker.K)
-        # Debug output for critical Kalman gain
-        # if tracker.K[1, 1] > 10:
-        #     print(tracker.K[1, 1])
-        #     print(reading[3, 0])
+        # if not np.all(np.linalg.eigvals(tracker.P) >= 0):
+        #     print(tracker.Pz)
+        #     print(tracker.K)
         #     print(tracker.P)
-        #     print(tracker.F)
-        #     print("-" * 15)
+        # residuals.append(tracker.y)
+        # Ks.append(tracker.K)
 
     readings = np.asarray(readings)
     filtered = np.asarray(filtered)
