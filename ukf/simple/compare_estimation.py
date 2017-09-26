@@ -104,8 +104,10 @@ def filtering(sim, tracker):
         Ps.append(copy(tracker.P))
         residual = tracker.y[:, np.newaxis]
         residuals.append(residual)
-        if index > 100:
-            average_factor = (1 - 0.95) / (1 - 0.95**(index + 1))
+        starting_index = 100
+        if index > starting_index:
+            average_factor = (1 - 0.95) / (1 -
+                                           0.95**(index - starting_index))
             estimate = estimate_noise_ukf_map(
                 residual, tracker.Pz, average_factor,
                 map_estimations[-1], False)
