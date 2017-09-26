@@ -79,6 +79,7 @@ def matrix_error(estimate, truth):
 
 
 def perform_estimation(residuals, tracker, F_arr, Ks):
+    residuals = residuals - np.average(residuals, axis=0)
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
     truth = R_proto * sim_var
