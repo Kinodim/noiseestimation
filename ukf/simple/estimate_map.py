@@ -94,7 +94,6 @@ def filtering(sim, tracker):
         filtered.append(copy(tracker.x))
         Ps.append(copy(tracker.P))
         residual = tracker.y[:, np.newaxis]
-        print(residual)
         if index > 100:
             R_estimation = perform_estimation(residual, tracker, index,
                                               estimated_Rs[-1])
