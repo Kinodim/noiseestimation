@@ -15,8 +15,8 @@ from noiseestimation.estimation import (
 skip_samples = 500
 used_taps = 100
 measurement_var = 1e-3
-R_proto = np.array([[2, 0],
-                    [0, 1]])
+R_proto = np.array([[1, 0],
+                    [0, 2]])
 sim_var = 0.001
 num_samples = skip_samples + 300
 # num_samples = 11670
