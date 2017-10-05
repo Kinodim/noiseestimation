@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from noiseestimation.sensor import LinearSensor
 
 # parameters
-measurement_var_max = 6
+measurement_var_max = 0.1
 num_samples = 600
 
 
@@ -44,6 +44,7 @@ def filtering(sim, tracker):
     measurement_vars = np.concatenate(
         (measurement_vars, list(reversed(measurement_vars))))
     Rs = [np.eye(2) * measurement_var for measurement_var in measurement_vars]
+    Rs = [np.eye(2) * measurement_var_max] * (num_samples / 4)
     readings = []
     truths = []
     filtered = []
@@ -66,20 +67,25 @@ def filtering(sim, tracker):
 
 
 def plot_results(readings, filtered, error):
-    f, axarr = plt.subplots(2)
-    axarr[0].plot(
+    f, axarr = plt.subplots(1)
+    axarr.plot(
         readings[:, 0],
         readings[:, 1],
         'go', label="Measurements")
-    axarr[0].plot(
+    axarr.plot(
         filtered[:, 0],
         filtered[:, 2],
         'm', linewidth=3, label="Filter")
-    axarr[0].legend(loc="lower right")
-    axarr[0].set_title("Kalman filtering of position")
+    axarr.legend(loc="lower right")
+    axarr.set_xlabel("x (m)")
+    axarr.set_ylabel("y (m)")
+    axarr.set_title("Kalman filtering of position")
 
-    axarr[1].plot(error, 'r')
-    axarr[1].set_title("Estimation error")
+    # axarr[1].plot(error, 'r')
+    # axarr[1].set_title("Estimation error")
+    # axarr[1].set_xlabel("Sample")
+    # axarr[1].set_ylabel("Error (m)")
+    # axarr[1].set_ylim((0, 0.65))
 
     plt.show()
 
