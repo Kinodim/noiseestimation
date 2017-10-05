@@ -1,5 +1,6 @@
 import numpy as np
 import tqdm
+import json
 from multiprocessing import Pool
 from math import fabs
 from filterpy.kalman import KalmanFilter
@@ -8,7 +9,6 @@ from matplotlib import pyplot as plt
 from noiseestimation.sensor import LinearSensor
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (
-    estimate_noise,
     estimate_noise_approx,
     estimate_noise_mehra)
 
@@ -16,7 +16,7 @@ from noiseestimation.estimation import (
 runs = 100
 sample_sizes = [80, 100, 120, 150,
                 200, 250, 300, 500, 1000]
-measurement_var = 9
+measurement_var = 1
 filter_misestimation_factor = 1.0
 
 
@@ -83,14 +83,13 @@ def perform_estimation(residuals, tracker, sample_size):
     used_taps = int(sample_size / 2)
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
-    R = estimate_noise(correlation, tracker.K, tracker.F, tracker.H)
     # R_mehra = estimate_noise_mehra(
     #     correlation, tracker.K, tracker.F, tracker.H)
-    # R_approx = estimate_noise_approx(
-    #     correlation[0], tracker.H, tracker.P)
+    R_approx = estimate_noise_approx(
+        correlation[0], tracker.H, tracker.P)
     # R_approx_posterior = estimate_noise_approx(
     #     correlation[0], tracker.H, tracker.P, "posterior")
-    return R
+    return R_approx
 
 
 def run_tracker(sample_size):
@@ -132,4 +131,8 @@ if __name__ == "__main__":
         errors.append(error)
         variances.append(variance)
 
+    with open("results.json", "w") as outfile:
+        json.dump(errors, outfile)
+        json.dump(variances, outfile)
+        outfile.close()
     plot_results(errors, variances)
