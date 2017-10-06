@@ -1,41 +1,31 @@
 import numpy as np
-from math import fabs
+import json
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
 from noiseestimation.sensor import LinearSensor
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (
-    estimate_noise,
     estimate_noise_approx,
     estimate_noise_mehra)
 
 # parameters
-runs = 100
-sample_size = 100
+runs = 200
+sample_size = 200
+skip_samples = 50
 used_taps = int(sample_size * 0.5)
-measurement_var = 9
-filter_misestimation_factor = 5.0
+measurement_var = 0.01
+filter_misestimation_factor = 1.0
 
 
-def plot_results(readings, mu, error, residuals):
-    f, axarr = plt.subplots(3, sharex=True)
-    axarr[0].plot(readings, 'go', label="Measurements")
-    axarr[0].plot(mu, 'm', linewidth=3, label="Filter")
-    axarr[0].legend(loc="lower right")
-    axarr[0].set_xlim([0, 100])
-    axarr[0].set_title("Kalman filtering of position")
-
-    axarr[1].plot(error, 'r')
-    axarr[1].set_title("Estimation error")
-
-    axarr[2].plot(residuals, 'b')
-    axarr[2].set_title("Residuals")
-
-    # cor = Correlator(residuals[-50:])
-    # print cor.isWhite()
-    # cor = Correlator(residuals)
-    # print cor.isWhite()
+def plot_results(readings, filtered, residuals):
+    plt.plot(readings[:, 0, 0], 'go', label="Measurements")
+    plt.plot(filtered[:, 0, 0], 'm', linewidth=3, label="Filter")
+    plt.legend(loc="lower right")
+    plt.xlim([0, 100])
+    plt.title("Kalman filtering of position")
+    plt.xlabel("Sample")
+    plt.ylabel("x (m)")
 
     plt.show()
 
@@ -63,7 +53,7 @@ def setup():
 
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
-    Rs = [[[measurement_var]]] * sample_size
+    Rs = [[[measurement_var]]] * (sample_size + skip_samples)
     readings = []
     truths = []
     filtered = []
@@ -87,31 +77,40 @@ def filtering(sim, tracker):
 def run_tracker():
     sim, tracker = setup()
     readings, truths, filtered, residuals = filtering(sim, tracker)
-    # plot_results(readings, mu, error, residuals)
+    # plot_results(readings, filtered, residuals)
 
     # perform estimation
-    cor = Correlator(residuals)
+    cor = Correlator(residuals[-sample_size:])
     correlation = cor.autocorrelation(used_taps)
-    R = estimate_noise(correlation, tracker.K, tracker.F, tracker.H)
     R_mehra = estimate_noise_mehra(correlation, tracker.K, tracker.F, tracker.H)
     R_approx = estimate_noise_approx(correlation[0], tracker.H, tracker.P)
-    abs_err = R - measurement_var
-    rel_err = abs_err / measurement_var
-    print("True: %.3f" % measurement_var)
-    print("Filter: %.3f" % tracker.R)
-    print("Estimated: %.3f" % R)
-    print("Estimated (approximation): %.3f" % R_approx)
-    print("Estimated (mehra): %.3f" % R_mehra)
-    print("Absolute error: %.3f" % abs_err)
-    print("Relative error: %.3f %%" % (rel_err * 100))
+    abs_err_approx = R_approx - measurement_var
+    rel_err_approx = abs_err_approx / measurement_var
+    abs_err_mehra = R_mehra - measurement_var
+    rel_err_mehra = abs_err_mehra / measurement_var
+    print("True: %.6f" % measurement_var)
+    print("Filter: %.6f" % tracker.R)
+
+    print("Estimated (approximation): %.6f" % R_approx)
+    print("Absolute error: %.6f" % abs_err_approx)
+    print("Relative error: %.6f %%" % (rel_err_approx * 100))
+
+    print("Estimated (mehra): %.6f" % R_mehra)
+    print("Absolute error: %.6f" % abs_err_mehra)
+    print("Relative error: %.6f %%" % (rel_err_mehra * 100))
     print("-" * 15)
-    return rel_err
+    return (abs_err_mehra, rel_err_mehra, abs_err_approx, rel_err_approx)
 
 
 if __name__ == "__main__":
-    sum = .0
+    sum = np.zeros(4)
     for i in range(runs):
         print("%d / %d" % (i+1, runs))
-        sum += fabs(run_tracker())
+        sum += np.abs(run_tracker()).reshape(4,)
 
-    print("Avg relative error: %.3f %%" % (sum * 100 / runs))
+    print("Average Mehra: %.6f %%" % (sum * 100 / runs)[1])
+    print("Average Mohamed: %.6f %%" % (sum * 100 / runs)[3])
+
+    with open("results.json", "w") as outfile:
+        json.dump((sum / runs).tolist(), outfile)
+        outfile.close()
