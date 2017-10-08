@@ -8,19 +8,19 @@ from matplotlib import pyplot as plt
 from noiseestimation.sensor import Sensor
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (
-    estimate_noise,
     estimate_noise_approx,
     estimate_noise_mehra,
     estimate_noise_extended
 )
 
 # parameters
-num_samples = 200
+num_samples = 150
+skip_initial = 30
 used_taps = num_samples / 2
 dt = 0.1
-measurement_var = 1
+measurement_var = 0.5
 R_proto = np.array([[1, 0],
-                    [0, 0.3]])
+                    [0, 0.2]])
 filter_misestimation_factor = 1
 
 
@@ -68,7 +68,7 @@ def setup():
     def f(x):
         return np.dot(F, x)
 
-    x0 = np.array([[-3],
+    x0 = np.array([[-6],
                    [0.5],
                    [1]])
     sim = Sensor(x0, f, h)
@@ -76,11 +76,11 @@ def setup():
     # set up kalman filter
     tracker = ExtendedKalmanFilter(dim_x=3, dim_z=2)
     tracker.F = F
-    q_x = Q_discrete_white_noise(dim=2, dt=dt, var=0.001)
-    q_y = 0.001 * dt**2
+    q_x = Q_discrete_white_noise(dim=2, dt=dt, var=0.0001)
+    q_y = 0.0001 * dt**2
     tracker.Q = block_diag(q_x, q_y)
     tracker.R = R_proto * measurement_var * filter_misestimation_factor
-    tracker.x = np.array([[2, -0.1, 4]]).T
+    tracker.x = np.array([[-2, -0.1, 2]]).T
     tracker.P = np.eye(3) * 500
 
     return sim, tracker
@@ -88,56 +88,69 @@ def setup():
 
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
-    Rs = [R_proto * measurement_var] * num_samples
-    readings = []
-    truths = []
-    filtered = []
-    Hs = []
-    residuals = []
+    Rs = [R_proto * measurement_var] * (num_samples + skip_initial)
+    (readings, truths, filtered,
+     Hs, Ks, residuals, residuals_posterior) = [], [], [], [], [], [], []
     for R in Rs:
         sim.step()
         reading = sim.read(R)
         tracker.predict()
         tracker.update(reading, H_jacobian_at, h, residual=custom_residual)
-        # Put H calculation after update step
+        # Put H calculation after update step for better estimate
         Hs.append(H_jacobian_at(tracker.x))
         readings.append(reading)
         truths.append(sim.x)
         filtered.append(tracker.x)
         residuals.append(tracker.y)
+        residuals_posterior.append(custom_residual(reading, h(tracker.x)))
+        Ks.append(tracker.K)
 
     readings = np.asarray(readings)
     truths = np.asarray(truths)
     filtered = np.asarray(filtered)
     Hs = np.asarray(Hs)
+    Ks = np.asarray(Ks)
     residuals = np.asarray(residuals)
-    return readings, truths, filtered, Hs, residuals
+    residuals_posterior = np.asarray(residuals_posterior)
+    return readings, truths, filtered, Hs, Ks, residuals, residuals_posterior
 
 
-def perform_estimation(residuals, tracker, H):
+def perform_estimation(residuals, residuals_posterior, tracker, H_arr, Ks):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
-    R = estimate_noise(
-        correlation, tracker.K, tracker.F, H[0])
-    R_extended = estimate_noise_extended(
-        correlation, tracker.K, tracker.F, H)
     R_mehra = estimate_noise_mehra(
-        correlation, tracker.K, tracker.F, H[0])
+        correlation, Ks[-1], tracker.F, H_arr[-1])
+    R_extended = estimate_noise_extended(
+        correlation, Ks, tracker.F, H_arr)
     R_approx = estimate_noise_approx(
-        correlation[0], H[0], tracker.P)
+        correlation[0], H_arr[-1], tracker.P)
+    cor_posterior = Correlator(residuals_posterior)
+    correlation_posterior = cor_posterior.autocorrelation(used_taps)
+    R_approx_posterior = estimate_noise_approx(
+        correlation_posterior[0], H_arr[-1], tracker.P, "posterior")
+
     truth = R_proto * measurement_var
-    print("Truth:\n", truth)
-    print("Estimation:\n", R)
-    print("Error:\n", matrix_error(R, truth))
-    print("Extended Estimation:\n", R)
-    print("Error:\n", matrix_error(R_extended, truth))
-    print("Mehra estimation:\n", R_mehra)
-    print("Error:\n", matrix_error(R_mehra, truth))
-    print("Approximated estimation:\n", R_approx)
-    print("Error:\n", matrix_error(R_approx, truth))
-    print("-" * 15)
-    error = matrix_error(R, truth)
-    return error
+    error_extended = matrix_error(R_extended, truth)
+    error_mehra = matrix_error(R_mehra, truth)
+    error_approx = matrix_error(R_approx, truth)
+    error_approx_posterior = matrix_error(R_approx_posterior, truth)
+
+
+    print("Extended estimation:")
+    print("\tEstimated R:", R_extended)
+    print("\tError: %.6f" % error_extended)
+    print("Mehra estimation:")
+    print("\tEstimated R:", R_mehra)
+    print("\tError: %.6f" % error_mehra)
+    print("Approximate estimation:")
+    print("\tEstimated R:", R_approx)
+    print("\tError: %.6f" % error_approx)
+    print("Approximate estimation (posterior):")
+    print("\tEstimated R:", R_approx_posterior)
+    print("\tError: %.6f" % error_approx_posterior)
+
+    return (error_extended, error_mehra,
+            error_approx, error_approx_posterior)
 
 
 def plot_results(readings, filtered, truths):
@@ -170,8 +183,10 @@ def plot_results(readings, filtered, truths):
 
 def run_tracker():
     sim, tracker = setup()
-    readings, truths, filtered, Hs, residuals = filtering(sim, tracker)
-    perform_estimation(residuals[10:], tracker, Hs[::-1])
+    readings, truths, filtered, Hs, Ks, residuals, residuals_posterior = filtering(sim, tracker)
+    perform_estimation(residuals[skip_initial:],
+                       residuals_posterior[skip_initial:],
+                       tracker, Hs[skip_initial:], Ks[skip_initial:])
     plot_results(readings, filtered, truths)
 
 

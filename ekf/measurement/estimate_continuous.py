@@ -16,13 +16,14 @@ from noiseestimation.estimation import (
 )
 
 # parameters
-num_samples = 180
-used_taps = 70
+skip_initial = 50
+num_samples = 250
+used_taps = 100
 dt = 0.1
-measurement_var = 0.05
+measurement_var = 0.1
 R_proto = np.array([[1, 0],
                     [0, 0.2]])
-filter_misestimation_factor = 0.05
+filter_misestimation_factor = 0.1
 Q_var = 0.001
 
 
@@ -79,10 +80,10 @@ def setup():
     tracker = ExtendedKalmanFilter(dim_x=3, dim_z=2)
     tracker.F = F
     q_x = Q_discrete_white_noise(dim=2, dt=dt, var=Q_var)
-    q_y = Q_var * dt**2
+    q_y = Q_var * 0.05* dt**2
     tracker.Q = block_diag(q_x, q_y)
     tracker.R = R_proto * measurement_var * filter_misestimation_factor
-    tracker.x = np.array([[-2, -1, 5]]).T
+    tracker.x = np.array([[-2, 1, 5]]).T
     tracker.P = np.eye(3) * 500
 
     return sim, tracker
@@ -91,7 +92,7 @@ def setup():
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
     Rs = [R_proto * measurement_var] * num_samples
-    readings, truths, filtered, Hs, residuals, Ps = [], [], [], [], [], []
+    readings, truths, filtered, Hs, Ks, residuals, Ps = [], [], [], [], [], [], []
     for R in Rs:
         sim.step()
         reading = sim.read(R)
@@ -104,90 +105,87 @@ def filtering(sim, tracker):
         filtered.append(tracker.x)
         residuals.append(tracker.y)
         Ps.append(tracker.P)
+        Ks.append(tracker.K)
 
     readings = np.asarray(readings)
     truths = np.asarray(truths)
     filtered = np.asarray(filtered)
     Hs = np.asarray(Hs)
+    Ks = np.asarray(Ks)
     residuals = np.asarray(residuals)
     Ps = np.asarray(Ps)
-    return readings, truths, filtered, Hs, residuals, Ps
+    return readings, truths, filtered, Hs, Ks, residuals, Ps
 
 
-def perform_estimation(residuals, tracker, Hs):
+def perform_estimation(residuals, tracker, H_arr, Ks):
     cor = Correlator(residuals)
     correlation = cor.autocorrelation(used_taps)
-    R = estimate_noise(
-        correlation, tracker.K, tracker.F, Hs[0])
-    R_extended = estimate_noise_extended(
-        correlation, tracker.K, tracker.F, Hs)
     R_mehra = estimate_noise_mehra(
-        correlation, tracker.K, tracker.F, Hs[0])
+        correlation, Ks[-1], tracker.F, H_arr[-1])
+    R_extended = estimate_noise_extended(
+        correlation, Ks, tracker.F, H_arr)
     R_approx = estimate_noise_approx(
-        correlation[0], Hs[0], tracker.P, "posterior")
+        correlation[0], H_arr[-1], tracker.P)
+
     truth = R_proto * measurement_var
-    print("Truth:\n", truth)
-    print("Estimation:\n", R)
-    print("Error:\n", matrix_error(R, truth))
-    print("Extended Estimation:\n", R_extended)
-    print("Error:\n", matrix_error(R_extended, truth))
-    print("Mehra estimation:\n", R_mehra)
-    print("Error:\n", matrix_error(R_mehra, truth))
-    print("Approximated estimation:\n", R_approx)
-    print("Error:\n", matrix_error(R_approx, truth))
-    print("-" * 15)
+    error_extended = matrix_error(R_extended, truth)
+    error_mehra = matrix_error(R_mehra, truth)
+    error_approx = matrix_error(R_approx, truth)
+
+
+    print("Extended estimation:")
+    print("\tEstimated R:", R_extended)
+    print("\tError: %.6f" % error_extended)
+    print("Mehra estimation:")
+    print("\tEstimated R:", R_mehra)
+    print("\tError: %.6f" % error_mehra)
+    print("Approximate estimation:")
+    print("\tEstimated R:", R_approx)
+    print("\tError: %.6f" % error_approx)
+
     return R_extended
 
 
 def plot_results(readings, filtered, adjusted_filtered, truths, Ps):
-    f, axarr = plt.subplots(4)
+    axarr = [plt.subplot()]
     axarr[0].plot(
-        filtered[:, 0],
-        filtered[:, 2],
-        'm', linewidth=3, label="Filter (normal)")
+        truths[:, 0],
+        truths[:, 2],
+        'k', linewidth=3, label="Truth")
     axarr[0].plot(
         adjusted_filtered[:, 0],
         adjusted_filtered[:, 2],
         'g', linewidth=3, label="Filter (adjusted)")
     axarr[0].plot(
-        truths[:, 0],
-        truths[:, 2],
-        'k', linewidth=3, label="Truth")
+        filtered[:, 0],
+        filtered[:, 2],
+        'm', linewidth=3, label="Filter (erroneous)")
     axarr[0].legend(loc="lower left")
     axarr[0].set_title("Kalman filtering of position")
     axarr[0].set_ylim((0.8, 1.2))
-
-    confidences = np.sum(np.diagonal(Ps, axis1=1, axis2=2), axis=1)
-    axarr[1].plot(
-        confidences,
-        'b', linewidth=3)
-    axarr[1].set_title("State estimate covariance (P)")
-    axarr[1].set_ylim((0, 0.1))
-
-    axarr[2].plot(
-        readings[:, 0, 0], 'go', label="Measurements")
-    axarr[2].set_title("Range measurements")
-
-    axarr[3].plot(
-       readings[:, 1, 0] * 180 / math.pi, 'go', label="Measurements")
-    axarr[3].set_title("Bearing measurements")
+    axarr[0].set_xlim((-2, 8))
+    axarr[0].set_xlabel("x (m)")
+    axarr[0].set_ylabel("y (m)")
 
     plt.show()
 
 
 def run_tracker():
     sim, tracker = setup()
-    readings, truths, filtered, Hs, residuals, Ps = filtering(sim, tracker)
+    readings, truths, filtered, Hs, Ks, residuals, Ps = filtering(sim, tracker)
 
-    R = perform_estimation(residuals[40:], tracker, Hs[::-1])
+    R = perform_estimation(residuals[skip_initial:], tracker,
+                           Hs[skip_initial:], Ks[skip_initial:])
     adjusted_tracker = copy.copy(tracker)
     adjusted_tracker.R = R
+    adjusted_tracker.P *= 5
     adjusted_sim = copy.copy(sim)
     (
         adjusted_readings,
         adjusted_truths,
         adjusted_filtered,
         adjusted_Hs,
+        adjusted_Ks,
         adjusted_residuals,
         adjusted_Ps
     ) = filtering(adjusted_sim, adjusted_tracker)
@@ -201,6 +199,7 @@ def run_tracker():
         normal_truths,
         normal_filtered,
         normal_Hs,
+        normal_Ks,
         normal_residuals,
         normal_Ps
     ) = filtering(sim, tracker)
