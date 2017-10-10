@@ -1,4 +1,5 @@
 from __future__ import print_function
+import copy
 import numpy as np
 from math import sin, tan, cos
 from simple_bicycle_ekf import SimpleBicycleEKF
@@ -6,12 +7,12 @@ from matplotlib import pyplot as plt
 from noiseestimation.sensor import Sensor
 
 # parameters
-num_samples = 600
-used_taps = num_samples / 2
+num_samples = 250
 dt = 0.1
 measurement_var = 0.01
-var_vel = 0.001
-var_steer = 0.0001
+Q = 0.001
+var_vel = Q
+var_steer = .1 * Q
 R_proto = np.array([[1, 0],
                     [0, 1]])
 filter_misestimation_factor = 1
@@ -69,18 +70,22 @@ def setup():
 
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
-    Rs = [R_proto * measurement_var] * num_samples
-    readings, truths, filtered, residuals, Ps, Fs = [], [], [], [], [], []
-    cmd = np.array([[1],
-                    [0.1]])
-    for R in Rs:
+    R = R_proto * measurement_var
+    readings, truths, filtered, residuals, Ps, Fs, Ks = [], [], [], [], [], [], []
+    cmds = [np.array([[0.6],
+                      [0.23]])] * (num_samples / 4)
+    cmds.extend([np.array([[2],
+                           [-0.20]])] * (num_samples / 2))
+    cmds.extend([np.array([[1],
+                           [0.2]])] * (num_samples / 4))
+    for cmd in cmds:
         sim.step(cmd)
         reading = sim.read(R)
         tracker.predict(cmd)
         tracker.update(reading)
         readings.append(reading)
         truths.append(sim.x)
-        filtered.append(tracker.x)
+        filtered.append(copy.copy(tracker.x))
         Ps.append(tracker.P)
         residuals.append(tracker.y)
         Fs.append(tracker.F)
@@ -95,11 +100,12 @@ def filtering(sim, tracker):
 
 
 def plot_results(readings, filtered, truths, Ps):
-    f, axarr = plt.subplots(2)
+    axarr = [plt.subplot()]
+
     axarr[0].plot(
         readings[:, 0],
         readings[:, 1],
-        'go', label="Readings"
+        'o', label="Readings"
     )
     axarr[0].plot(
         truths[:, 0],
@@ -108,14 +114,20 @@ def plot_results(readings, filtered, truths, Ps):
     axarr[0].plot(
         filtered[:, 0],
         filtered[:, 1],
-        'm', linewidth=3, label="Filter")
+        linewidth=3, label="Filter")
     axarr[0].legend(loc="lower right")
     axarr[0].set_title("Kalman filtering of position")
-    # axarr[0].axis('scaled')
+    axarr[0].set_xlabel("x (m)")
+    axarr[0].set_ylabel("y (m)")
+    axarr[0].axis('scaled')
 
-    axarr[1].plot(Ps[:, 0, 0], label="X Variance")
-    axarr[1].plot(Ps[:, 1, 1], label="Y Variance")
-    axarr[1].legend(loc="upper right")
+    # axarr[0].plot(Ps[:, 0, 0], 'g', label="X state variance")
+    # axarr[0].plot(Ps[:, 1, 1], 'r', label="Y state variance")
+    # axarr[0].legend(loc="upper right")
+    # axarr[0].set_ylim((0, 0.002))
+    # axarr[0].set_ylabel("$\sigma^2$ ($m^2$)")
+    # axarr[0].set_xlabel("Sample")
+    # axarr[0].set_title("State covariance")
 
     plt.show()
 
@@ -123,6 +135,7 @@ def plot_results(readings, filtered, truths, Ps):
 def run_tracker():
     sim, tracker = setup()
     readings, truths, filtered, residuals, Ps, Fs = filtering(sim, tracker)
+    print(np.sqrt(np.sum(np.square(truths-filtered)[50:,[0,1],0])))
     plot_results(readings, filtered, truths, Ps)
 
 

@@ -33,6 +33,10 @@ class SimpleBicycleEKF(EKF):
         # covariance of motion in control space
         M = np.diag((self.var_vel, self.var_steer))
         self.P = np.dot(F, np.dot(self.P, F.T)) + np.dot(B, np.dot(M, B.T))
+        # if self.x[2, 0] > np.pi:
+        #     self.x[2, 0] -= 2*np.pi
+        # if self.x[2, 0] < -np.pi:
+        #     self.x[2, 0] += 2*np.pi
 
     def update(self, z):
         def Hx(x):
