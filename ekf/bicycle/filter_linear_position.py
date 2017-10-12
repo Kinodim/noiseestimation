@@ -7,7 +7,6 @@ from noiseestimation.playback_sensor import PlaybackSensor
 measurement_var = 0.001
 sim_var = 0.000
 num_samples = 11670
-# TODO change to a lower value and read measurements only when available
 dt = 0.01
 
 # constants for bicycle model
@@ -106,7 +105,10 @@ def plot_results(readings, filtered, velocities, delta_ts):
                                                             np.sin(angle)])
         positions[idx + 1] = positions[idx] + delta
 
-    plt.plot(positions[:, 0], positions[:, 1], 'b-')
+    plt.plot(positions[:, 0], positions[:, 1], 'C2-')
+    plt.plot(positions[0, 0], positions[0, 1], 'bx', label="start")
+    plt.plot(positions[-1, 0], positions[-1, 1], 'rx', label="end")
+    plt.legend(loc="lower right")
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
     plt.show()

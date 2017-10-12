@@ -6,7 +6,7 @@ from noiseestimation.playback_sensor import PlaybackSensor
 # parameters
 measurement_var = 0.001
 sim_var = 0.000
-num_samples = 4000
+num_samples = 2000
 # TODO change to a lower value and read measurements only when available
 dt = 0.01
 
@@ -87,17 +87,21 @@ def filtering(sim, tracker):
 
 
 def plot_results(readings, filtered):
-    f, axarr = plt.subplots(2)
-    axarr[0].set_title("Schwimmwinkel (deg)")
+    f, axarr = plt.subplots(2, sharex=True)
+    axarr[0].set_title("Schwimmwinkel")
     axarr[0].plot(
         filtered[:, 0] * 180.0 / np.pi,
-        'go')
+        'o')
     axarr[0].set_ylim((-20, 20))
+    axarr[0].set_ylabel(r"$\beta$ (deg)")
+    axarr[0].set_ylim((-10, 15))
 
-    axarr[1].set_title("Gierrate (deg/s)")
+    axarr[1].set_title("Gierrate")
     axarr[1].plot(
         filtered[:, 1] * 180.0 / np.pi,
-        'ro')
+        'C1o')
+    axarr[1].set_ylabel(r"$\dot{\psi}$ (deg/s)")
+    axarr[1].set_xlabel("Sample")
     plt.show()
 
 
@@ -108,4 +112,6 @@ def run_tracker():
 
 
 if __name__ == "__main__":
+    plt.rcParams["lines.linewidth"] = 2
+    plt.rcParams["lines.markersize"] = 5
     run_tracker()
