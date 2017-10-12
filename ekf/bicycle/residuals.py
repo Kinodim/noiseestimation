@@ -17,7 +17,7 @@ dt = 0.01
 
 Q = 0.01
 var_steer = Q * 0.005
-var_acc = Q * 4
+var_acc = Q * 2
 
 
 def setup():
@@ -94,7 +94,7 @@ def plot_residuals(readings, filtered, residuals):
     axarr[0].set_xlim((zoom_start, zoom_end))
     upper_lim = np.max(filtered[zoom_start:zoom_end, 1, 0]) * 1.2 * 180.0 / np.pi
     lower_lim = np.min(filtered[zoom_start:zoom_end, 1, 0]) * 1.2 * 180.0 / np.pi
-    axarr[0].set_ylim((upper_lim, lower_lim))
+    axarr[0].set_ylim((lower_lim, upper_lim))
 
     mean = np.average(residuals[zoom_start:zoom_end, 0, 0])
     axarr[1].set_title("Innovation der Gierrate")
@@ -105,7 +105,7 @@ def plot_residuals(readings, filtered, residuals):
     axarr[1].set_xlim((zoom_start, zoom_end))
     upper_lim = np.max(residuals[zoom_start:zoom_end, 0, 0]) * 1.2
     lower_lim = np.min(residuals[zoom_start:zoom_end, 0, 0]) * 1.2
-    axarr[1].set_ylim((upper_lim, lower_lim))
+    axarr[1].set_ylim((lower_lim, upper_lim))
     axarr[1].set_xlabel("Sample")
     axarr[1].legend(loc="lower right")
 
