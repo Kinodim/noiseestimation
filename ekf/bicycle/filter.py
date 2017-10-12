@@ -4,31 +4,20 @@ from copy import copy
 from matplotlib import pyplot as plt
 from noiseestimation.playback_sensor import PlaybackSensor
 from bicycle_ekf import BicycleEKF
-from noiseestimation.correlator import Correlator
-from noiseestimation.estimation import (
-    estimate_noise_mehra,
-    estimate_noise_extended,
-    estimate_noise_approx
-)
 
 # parameters
-skip_samples = 1500
-num_samples = 300
-# num_samples = 11670
 used_taps = 100
-
-measurement_var = 1e-6
-sim_var = 1e-3
+measurement_var = 1e-5
 R_proto = np.array([[1, 0],
                     [0, 2]])
+sim_var = 1e-3
+num_samples = 1800
+# num_samples = 11670
 dt = 0.01
 
 Q = 0.01
-var_steer = Q * 0.02
-var_acc = Q * 5
-
-def matrix_error(estimate, truth):
-    return np.sqrt(np.sum(np.square(truth - estimate)))
+var_steer = Q * 0.01
+var_acc = Q * 4
 
 
 def setup():
@@ -48,7 +37,7 @@ def setup():
 
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
-    Rs = [R_proto * sim_var] * (num_samples + skip_samples)
+    Rs = [R_proto * sim_var] * num_samples
     readings, filtered, residuals, Ps, Fs, Ks = [], [], [], [], [], []
     for R in Rs:
         time, reading = sim.read(R)
@@ -82,64 +71,49 @@ def filtering(sim, tracker):
     return readings, filtered, residuals, Ps, Fs, Ks
 
 
-def perform_estimation(residuals, tracker, F_arr, K_arr):
-    cor = Correlator(residuals)
-    C_arr = cor.autocorrelation(used_taps)
-    truth = R_proto * sim_var
-    matrix_size = matrix_error(truth, 0)
-    print("Truth:\n", truth)
-    R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
-    error_R = matrix_error(R, truth)
-    print("Mehra:\n", R)
-    print("\t Relative error: %.6f" % (error_R / matrix_size))
-    R_extended = estimate_noise_extended(C_arr, K_arr, F_arr, tracker.H)
-    error_R_extended = matrix_error(R_extended, truth)
-    print("Extended:\n", R_extended)
-    print("\t Relative error: %.6f" % (error_R_extended / matrix_size))
-    R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
-    error_R_approx = matrix_error(R_approx, truth)
-    print("Approximation:\n", R_approx)
-    print("\t Relative error: %.6f" % (error_R_approx / matrix_size))
-
-
 def plot_results(readings, filtered, Ps):
     plot_filtered_values(readings, filtered, Ps)
     # plot_position(readings, filtered)
 
 
 def plot_filtered_values(readings, filtered, Ps):
-    f, axarr = plt.subplots(3, 2)
-    axarr[0, 0].set_title("Schwimmwinkel (deg)")
-    axarr[0, 0].plot(
+    f, axarr = plt.subplots(3, 1, sharex=True)
+    axarr[0].set_title("Schwimmwinkel")
+    axarr[0].plot(
         filtered[:, 0] * 180.0 / np.pi,
-        'go')
-    axarr[0, 0].set_ylim((-20, 20))
-    axarr[0, 1].set_title("Geschaetze Varianz des Schwimmwinkels")
-    axarr[0, 1].plot(
-        Ps[:, 0, 0]
-    )
-    axarr[0, 1].set_ylim((0, 0.005))
+        'C2o')
+    axarr[0].set_ylim((-10, 15))
+    axarr[0].set_ylabel(r"$\beta$ (deg)")
+    # axarr[0, 1].set_title("Geschaetze Varianz des Schwimmwinkels")
+    # axarr[0, 1].plot(
+    #     Ps[:, 0, 0]
+    # )
+    # axarr[0, 1].set_ylim((0, 0.005))
 
-    axarr[1, 0].set_title("Gierrate (deg/s)")
-    axarr[1, 0].plot(
+    axarr[1].set_title("Gierrate")
+    axarr[1].plot(
         readings[:, 0] * 180.0 / np.pi,
         'kx'
     )
-    axarr[1, 0].plot(
+    axarr[1].plot(
         filtered[:, 1] * 180.0 / np.pi,
         'r-')
-    axarr[1, 1].set_title("Geschaetze Varianz der Gierrate")
-    axarr[1, 1].plot(
-        Ps[:, 1, 1]
-    )
+    axarr[1].set_ylabel(r"$\dot{\psi}$ (deg/s)")
+    # axarr[1, 1].set_title("Geschaetze Varianz der Gierrate")
+    # axarr[1, 1].plot(
+    #     Ps[:, 1, 1]
+    # )
 
-    axarr[2, 0].set_title("Geschwindigkeit (m/s)")
-    axarr[2, 0].plot(readings[:, 1], 'kx')
-    axarr[2, 0].plot(filtered[:, 2], 'b-')
-    axarr[2, 1].set_title("Geschaetze Varianz der Geschwindigkeit")
-    axarr[2, 1].plot(
-        Ps[:, 2, 2]
-    )
+    axarr[2].set_title("Geschwindigkeit")
+    axarr[2].plot(readings[:, 1], 'kx')
+    axarr[2].plot(filtered[:, 2], 'b-')
+    axarr[2].set_xlabel("Sample")
+    axarr[2].set_ylabel(r"$v$ (m/s)")
+    # axarr[2, 1].set_title("Geschaetze Varianz der Geschwindigkeit")
+    # axarr[2, 1].plot(
+    #     Ps[:, 2, 2]
+    # )
+
     plt.show()
 
 
@@ -158,7 +132,10 @@ def plot_position(readings, filtered):
                                           np.sin(angle)])
         positions[idx + 1] = positions[idx] + delta
 
-    plt.plot(positions[:, 0], positions[:, 1], 'b-')
+    plt.plot(positions[:, 0], positions[:, 1], 'C2-')
+    plt.plot(positions[0, 0], positions[0, 1], 'bx', label="start")
+    plt.plot(positions[-1, 0], positions[-1, 1], 'rx', label="end")
+    plt.legend(loc="lower right")
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
     plt.show()
@@ -167,8 +144,6 @@ def plot_position(readings, filtered):
 def run_tracker():
     sim, tracker = setup()
     readings, filtered, residuals, Ps, Fs, Ks = filtering(sim, tracker)
-    perform_estimation(residuals[skip_samples:], tracker,
-                       Fs[skip_samples:], Ks[skip_samples:])
 
     plot_results(readings, filtered, Ps)
 
