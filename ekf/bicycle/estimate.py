@@ -12,15 +12,16 @@ from noiseestimation.estimation import (
 )
 
 # parameters
-skip_samples = 1500
+skip_samples = 500
 num_samples = 300
 # num_samples = 11670
-used_taps = 100
+used_taps = num_samples / 2
 
 measurement_var = 1e-6
 sim_var = 1e-3
 R_proto = np.array([[1, 0],
                     [0, 2]])
+filter_misestimation_factor = 1
 dt = 0.01
 
 Q = 0.01
@@ -37,7 +38,7 @@ def setup():
                          control_fields=["fStwAng", "fAx"])
     # set up kalman filter
     tracker = BicycleEKF(dt)
-    tracker.R = sim_var + measurement_var
+    tracker.R = R_proto * (sim_var + measurement_var) * filter_misestimation_factor
     tracker.x = np.array([[0, 0, 1e-3]]).T
     tracker.P = np.eye(3) * 500
     tracker.var_steer = var_steer
@@ -83,6 +84,7 @@ def filtering(sim, tracker):
 
 
 def perform_estimation(residuals, tracker, F_arr, K_arr):
+    residuals = residuals - np.average(residuals, axis=0)
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
     truth = R_proto * sim_var

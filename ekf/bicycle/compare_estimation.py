@@ -1,6 +1,7 @@
 from __future__ import print_function
 import numpy as np
 import tqdm
+import json
 from multiprocessing import Pool
 from copy import copy
 from matplotlib import pyplot as plt
@@ -15,14 +16,22 @@ from noiseestimation.estimation import (
 
 # parameters
 runs = 400
+
 skip_samples = 500
-used_taps = 100
-measurement_var = 1e-3
+num_samples = 300
+# num_samples = 11670
+used_taps = num_samples / 2
+
+measurement_var = 1e-6
+sim_var = 1e-3
 R_proto = np.array([[1, 0],
-                    [0, 1]])
-sim_var = 0.003
-num_samples = skip_samples + 200
+                    [0, 2]])
+filter_misestimation_factor = 1
 dt = 0.01
+
+Q = 0.01
+var_steer = Q * 0.02
+var_acc = Q * 5
 
 
 def setup():
@@ -31,16 +40,18 @@ def setup():
                          control_fields=["fStwAng", "fAx"])
     # set up kalman filter
     tracker = BicycleEKF(dt)
-    tracker.R = R_proto * (sim_var + measurement_var)
+    tracker.R = R_proto * (sim_var + measurement_var) * filter_misestimation_factor
     tracker.x = np.array([[0, 0, 1e-3]]).T
     tracker.P = np.eye(3) * 500
+    tracker.var_steer = var_steer
+    tracker.var_acc = var_acc
 
     return sim, tracker
 
 
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
-    Rs = [R_proto * sim_var] * num_samples
+    Rs = [R_proto * sim_var] * (num_samples + skip_samples)
     readings, filtered, residuals, Ps, Fs, Ks = [], [], [], [], [], []
     for R in Rs:
         time, reading = sim.read(R)
@@ -82,7 +93,7 @@ def perform_estimation(residuals, tracker, F_arr, Ks):
     residuals = residuals - np.average(residuals, axis=0)
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
-    truth = R_proto * sim_var
+    truth = R_proto * (sim_var + measurement_var)
     R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
     error_mehra = matrix_error(R, truth)
     R_approx = estimate_noise_approx(C_arr[0], tracker.H, tracker.P)
@@ -175,19 +186,29 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
 
+    truth = R_proto * (sim_var + measurement_var)
+    truth_size = matrix_error(truth, 0)
     errors_arr = np.asarray(errors_arr)
     avg_errors = np.average(errors_arr, axis=0)
+    rel_errors = avg_errors / truth_size
+    print("Max. error: %.6f" % np.max(errors_arr))
+
     # ddof = 1 assures an unbiased estimate
-    variances = np.var(errors_arr, axis=0, ddof=1)
-    min_err = np.min(errors_arr, axis=0)
-    max_err = np.max(errors_arr, axis=0)
+    # variances = np.var(errors_arr, axis=0, ddof=1)
     print("-" * 20)
     print("Mehra estimation:")
     print("\tAverage Error: %.8f" % avg_errors[0])
-    print("\tError variance: %.8f" % variances[0])
+    print("\tRelative Error: %.8f" % rel_errors[0])
     print("Approximate estimation:")
     print("\tAverage Error: %.8f" % avg_errors[1])
-    print("\tError variance: %.8f" % variances[1])
+    print("\tRelative Error: %.8f" % rel_errors[1])
     print("Extended estimation:")
     print("\tAverage Error: %.8f" % avg_errors[2])
-    print("\tError variance: %.8f" % variances[2])
+    print("\tRelative Error: %.8f" % rel_errors[2])
+
+    res = {}
+    res["types"] = ["Mehra", "Mohamed", "Extended"]
+    res["abs_err"] = avg_errors.tolist()
+    res["rel_err"] = rel_errors.tolist()
+    with open("results.json", "w") as outfile:
+        json.dump(res, outfile)

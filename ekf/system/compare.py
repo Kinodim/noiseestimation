@@ -209,5 +209,5 @@ if __name__ == "__main__":
     res["types"] = ["Extended", "Mehra", "Mohamed"]
     res["abs_err"] = avg_errors.tolist()
     res["rel_err"] = rel_errors.tolist()
-    with open("results.txt", "w") as outfile:
+    with open("results.json", "w") as outfile:
         json.dump(res, outfile)

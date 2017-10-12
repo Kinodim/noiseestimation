@@ -14,17 +14,19 @@ from noiseestimation.estimation import (
 # parameters
 skip_samples = 500
 window_size = 150
-num_windows = 20
+num_windows = 30
 used_taps = window_size / 2
-average_coefficient = 0.75
-measurement_var = 1e-4
+# average_coefficient = 0.5
+measurement_var = 1e-5
 R_proto = np.array([[1, 0],
                     [0, 2]])
-sim_var = 0.005
+sim_var = 1e-3
 misestimation_factor = 2
-# num_samples = skip_samples + window_size + num
-# num_samples = 11670
 dt = 0.01
+
+Q = 0.01
+var_steer = Q * 0.02
+var_acc = Q * 5
 
 
 def setup():
@@ -36,6 +38,8 @@ def setup():
     tracker.R = R_proto * (sim_var + measurement_var) * misestimation_factor
     tracker.x = np.array([[0, 0, 1e-1]]).T
     tracker.P = np.eye(3) * 500
+    tracker.var_steer = var_steer
+    tracker.var_acc = var_acc
 
     return sim, tracker
 
@@ -70,6 +74,7 @@ def filtering(sim, tracker, num_samples):
 
 
 def perform_estimation(residuals, tracker, F_arr, K_arr):
+    residuals = residuals - np.average(residuals, axis=0)
     cor = Correlator(residuals)
     C_arr = cor.autocorrelation(used_taps)
     R = estimate_noise_mehra(C_arr, tracker.K, tracker.F, tracker.H)
@@ -169,8 +174,12 @@ def run_tracker():
             sim, tracker, window_size)
         R_estimated = perform_estimation(residuals, tracker, Fs, Ks)
         Rs_estimated.append(R_estimated)
-        R = R_avg * average_coefficient + \
-            (1-average_coefficient) * R_estimated
+
+        update_coefficient = (1 - 0.9) / (1 - 0.9**(i + 1))
+        R = R_avg * (1-update_coefficient) + \
+            update_coefficient * R_estimated
+        # R = R_avg * average_coefficient + \
+            # (1-average_coefficient) * R_estimated
         R_avg = R
         tracker.R = R
         Rs.append(R)
