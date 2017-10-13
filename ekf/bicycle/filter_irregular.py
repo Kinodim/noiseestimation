@@ -4,12 +4,6 @@ from copy import copy
 from matplotlib import pyplot as plt
 from noiseestimation.playback_sensor import PlaybackSensor
 from bicycle_ekf import BicycleEKF
-from noiseestimation.correlator import Correlator
-from noiseestimation.estimation import (
-    estimate_noise_mehra,
-    estimate_noise_extended,
-    estimate_noise_approx
-)
 
 # parameters
 skip_samples = 600
@@ -71,9 +65,9 @@ def filtering(sim, tracker):
         while time < next_time:
             tracker.predict(controls)
             F_cumul = np.dot(tracker.F, F_cumul)
-            filtered.append(copy(tracker.x))
-            Ps.append(copy(tracker.P))
             time += dt
+            # filtered.append(copy(tracker.x))
+            # Ps.append(copy(tracker.P))
         measurement = next_meas[0:2]
         controls = next_meas[2:]
         tracker.update(measurement)

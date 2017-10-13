@@ -12,20 +12,24 @@ from noiseestimation.estimation import (
 )
 
 # parameters
-skip_samples = 100
-window_size = 100
-num_windows = 80
+skip_samples = 400
+window_size = 150
+num_windows = 10
 used_taps = window_size / 2
 average_coefficient = 0.2
 
 measurement_var = 5e-5
 R_proto = np.array([[1, 0],
                     [0, 3]])
-filter_misestimation_factor = 1
+filter_misestimation_factor = 2
 sim_var = 1e-3
-vel_threshold = 0.05
+vel_threshold = 0.1
 
 dt = 0.0005
+
+Q = 0.01
+var_steer = 0.1 * Q
+var_acc = Q * 100
 
 
 def setup():
@@ -39,8 +43,8 @@ def setup():
     tracker.x = np.array([[0, 0, 1e-3]]).T
     tracker.P = np.eye(3) * 500
     # control not as accurate anymore
-    tracker.var_steer = 0.0005
-    tracker.var_acc = 0.5
+    tracker.var_steer = var_steer
+    tracker.var_acc = var_acc
 
     return sim, tracker
 
@@ -177,16 +181,20 @@ def plot_position(readings, filtered, dts):
 
 
 def plot_noise_matrices(Rs, Rs_estimated, truth):
-    f, axarr = plt.subplots(2)
-    axarr[0].set_title("R[0, 0]")
-    axarr[0].plot(Rs[:, 0, 0])
-    axarr[0].plot([truth[0, 0]] * len(Rs))
-    axarr[0].plot(Rs_estimated[:, 0, 0], 'o')
+    f, axarr = plt.subplots(2, sharex=True)
+    axarr[0].set_title(r"$R_{00}$")
+    axarr[0].plot(Rs[:, 0, 0], label="weighted average")
+    axarr[0].plot(truth[:, 0, 0], label="truth")
+    axarr[0].plot(Rs_estimated[:, 0, 0], 'o', label="estimations")
+    axarr[0].set_ylabel(r"$\sigma_{\dot{\psi}}^2$ (deg/s)$^2$")
+    axarr[0].legend(loc="upper right")
 
-    axarr[1].set_title("R[1, 1]")
+    axarr[1].set_title(r"$R_{11}$")
+    axarr[1].set_ylabel(r"$\sigma_v^2$ (m/s)$^2$")
     axarr[1].plot(Rs[:, 1, 1])
-    axarr[1].plot([truth[1, 1]] * len(Rs))
+    axarr[1].plot(truth[:, 1, 1])
     axarr[1].plot(Rs_estimated[:, 1, 1], 'o')
+    axarr[1].set_xlabel("Window")
 
     plt.show()
 
@@ -228,14 +236,18 @@ def run_tracker():
     Rs_estimated = [tracker.R]
     R_avg = tracker.R
     sim_vars = [sim_var] * num_windows
-    truths = []
+    truths = [R_proto * sim_vars[0]]
     for i in range(num_windows):
         readings, filtered, residuals, Ps, Fs, Ks, time, controls = filtering(
             sim, tracker, window_size, time, controls, R_proto * sim_vars[i])
         R_estimated = perform_estimation(residuals, tracker, Fs, Ks)
         Rs_estimated.append(R_estimated)
-        R = R_avg * average_coefficient + \
-            (1-average_coefficient) * R_estimated
+
+        update_coefficient = (1 - 0.9) / (1 - 0.9**(i + 1))
+        R = R_avg * (1-update_coefficient) + \
+            update_coefficient * R_estimated
+        # R = R_avg * average_coefficient + \
+        #     (1-average_coefficient) * R_estimated
         R_avg = R
         tracker.R = R
         Rs.append(R)
@@ -254,8 +266,9 @@ def run_tracker():
     Rs_estimated = np.asarray(Rs_estimated)
     truths = np.asarray(truths)
 
-    plot_noise_matrices_with_data(Rs, Rs_estimated, truths,
-                                  total_filtered, total_readings)
+    # plot_noise_matrices_with_data(Rs, Rs_estimated, truths,
+    #                               total_filtered, total_readings)
+    plot_noise_matrices(Rs, Rs_estimated, truths)
 
 
 if __name__ == "__main__":
