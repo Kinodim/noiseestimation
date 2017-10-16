@@ -11,8 +11,8 @@ from noiseestimation.estimation import (
 
 # parameters
 skip_samples = 80
-window_size = 150
-num_windows = 8
+window_size = 100
+num_windows = 12
 used_taps = window_size / 2
 average_coefficient = 0.3
 
@@ -227,7 +227,7 @@ def run_tracker():
         #     (1-average_coefficient) * R_estimated
         R_avg = R
         print(R)
-        # tracker.R = R
+        tracker.R = R
         Rs.append(R)
 
         if len(Rs) == 2:

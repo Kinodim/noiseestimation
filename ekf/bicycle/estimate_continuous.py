@@ -21,7 +21,7 @@ average_coefficient = 0.2
 measurement_var = 5e-5
 R_proto = np.array([[1, 0],
                     [0, 3]])
-filter_misestimation_factor = 2
+filter_misestimation_factor = 1
 sim_var = 1e-3
 vel_threshold = 0.1
 

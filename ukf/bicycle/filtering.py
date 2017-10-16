@@ -10,8 +10,8 @@ skip_samples = 500
 used_taps = 100
 measurement_var = 1e-5
 R_proto = np.array([[1, 0],
-                    [0, 1]])
-sim_var = 1e-4
+                    [0, 3]])
+sim_var = 1e-3
 num_samples = skip_samples + 600
 # num_samples = 11670
 dt = 0.01
@@ -23,9 +23,9 @@ def setup():
                          control_fields=["fStwAng", "fAx"])
     # set up kalman filter
     tracker = BicycleUKF(dt)
-    Q_factor = np.array(1e-5)
-    tracker.Q = np.diag([1, 1, 0.1] * Q_factor)
-    tracker.R = np.eye(2) * (sim_var + measurement_var) * 1
+    Q_factor = np.array(1e-6)
+    tracker.Q = np.diag([1, 1, 1] * Q_factor)
+    tracker.R = R_proto * (sim_var + measurement_var) * 1
     tracker.x = np.array([0, 0, 1]).T
     tracker.P = np.eye(3) * 1e0
 
