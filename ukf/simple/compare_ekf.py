@@ -16,13 +16,13 @@ from noiseestimation.estimation import (
 )
 
 # parameters
-runs = 1
+runs = 10
 skip_initial = 50
 num_samples = 250
 used_taps = (num_samples - skip_initial) / 2
 dt = 0.1
 measurement_var = 0.05
-Q = 4e-5
+Q = 4e-3
 var_pos = Q
 var_heading = Q * 0.1
 R_proto = np.array([[1, 0],
@@ -32,6 +32,13 @@ map_b = 0.999
 
 turning_threshold_angle = 0.001
 wheelbase = 1
+
+
+def normalize_angle(x):
+    x = x % (2 * np.pi)
+    if x > np.pi:
+        x -= 2 * np.pi
+    return x
 
 
 # move simulated robot
@@ -58,7 +65,12 @@ def f(x, u):
                        [0]])
 
     res = x + dx
+    x[2, 0] = normalize_angle(x[2, 0])
     return res if not x_onedim else res[:, 0]
+
+
+def fx(x, dt, u):
+    return f(x, u)
 
 
 def matrix_error(estimate, truth):
@@ -80,7 +92,7 @@ def setup():
 
     # set up kalman filter
     sigmas = MerweScaledSigmaPoints(3, alpha=.1, beta=2., kappa=0)
-    tracker = UKF(dim_x=3, dim_z=2, fx=f, hx=h, dt=dt, points=sigmas)
+    tracker = UKF(dim_x=3, dim_z=2, fx=fx, hx=h, dt=dt, points=sigmas)
     tracker.Q = np.diag((var_pos, var_pos, var_heading))
     tracker.R = R_proto * measurement_var * filter_misestimation_factor
     tracker.x = np.array([0, 0, 0])
@@ -104,7 +116,7 @@ def filtering(sim, tracker):
         sim.step(cmd)
         R = R_proto * measurement_var
         reading = sim.read(R)
-        tracker.predict(cmd)
+        tracker.predict(fx_args=cmd)
         tracker.update(reading[:, 0])
         readings.append(reading)
         truths.append(sim.x)
@@ -196,7 +208,8 @@ def run_tracker(dummy):
      map_estimate, map_estimate_convergence) = filtering(sim, tracker)
     errors = perform_estimation(residuals[skip_initial:], tracker,
                                 map_estimate, map_estimate_convergence)
-    # plot_results(readings, filtered, truths, Ps)
+    if np.max(errors) > 1:
+        plot_results(readings, filtered, truths, Ps)
     return errors
 
 

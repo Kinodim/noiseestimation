@@ -24,6 +24,13 @@ class SimpleBicycleEKF(EKF):
         self.H = np.array([[1, 0, 0],
                            [0, 1, 0]])
 
+    def normalize_angle(self):
+        ang = self.x[2, 0]
+        ang = ang % (2 * np.pi)
+        if ang > np.pi:
+            ang -= 2 * np.pi
+        return ang
+
     def predict(self, u=0):
         self.move(u)
         F = self.Fx(u)
@@ -33,10 +40,6 @@ class SimpleBicycleEKF(EKF):
         # covariance of motion in control space
         M = np.diag((self.var_vel, self.var_steer))
         self.P = np.dot(F, np.dot(self.P, F.T)) + np.dot(B, np.dot(M, B.T))
-        # if self.x[2, 0] > np.pi:
-        #     self.x[2, 0] -= 2*np.pi
-        # if self.x[2, 0] < -np.pi:
-        #     self.x[2, 0] += 2*np.pi
 
     def update(self, z):
         def Hx(x):
@@ -66,6 +69,7 @@ class SimpleBicycleEKF(EKF):
                            [0]])
 
         self.x += dx
+        # self.normalize_angle()
 
     def Fx(self, u):
         vel = u[0, 0]
