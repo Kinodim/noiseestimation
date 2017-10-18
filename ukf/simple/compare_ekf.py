@@ -16,19 +16,19 @@ from noiseestimation.estimation import (
 )
 
 # parameters
-runs = 400
-skip_initial = 100
-num_samples = 300
-used_taps = num_samples / 2
+runs = 1
+skip_initial = 50
+num_samples = 250
+used_taps = (num_samples - skip_initial) / 2
 dt = 0.1
-measurement_var = 0.1
-Q = 3e-5
+measurement_var = 0.05
+Q = 4e-5
 var_pos = Q
 var_heading = Q * 0.1
-R_proto = np.array([[1, 0.1],
-                    [0.1, 1.5]])
+R_proto = np.array([[1, 0],
+                    [0, 1]])
 filter_misestimation_factor = 1
-map_b = 0.9995
+map_b = 0.999
 
 turning_threshold_angle = 0.001
 wheelbase = 1
@@ -83,8 +83,6 @@ def setup():
     tracker = UKF(dim_x=3, dim_z=2, fx=f, hx=h, dt=dt, points=sigmas)
     tracker.Q = np.diag((var_pos, var_pos, var_heading))
     tracker.R = R_proto * measurement_var * filter_misestimation_factor
-    tracker.R = np.asarray([[1, 0],
-                            [0, 1.5]]) * measurement_var * filter_misestimation_factor
     tracker.x = np.array([0, 0, 0])
     tracker.P = np.eye(3) * 500
 
@@ -93,14 +91,18 @@ def setup():
 
 def filtering(sim, tracker):
     # perform sensor simulation and filtering
-    Rs = [R_proto * measurement_var] * (num_samples + skip_initial)
     (readings, truths, filtered, residuals, Ps,
      map_estimations, map_estimations_convergence) = (
         [], [], [], [], [], [0], [0])
-    cmd = np.array([[1],
-                    [0.1]])
-    for index, R in enumerate(Rs):
+    cmds = [np.array([[0.6],
+                      [0.23]])] * (num_samples / 4)
+    cmds.extend([np.array([[2],
+                           [-0.20]])] * (num_samples / 2))
+    cmds.extend([np.array([[1],
+                           [0.2]])] * (num_samples / 4))
+    for index, cmd in enumerate(cmds):
         sim.step(cmd)
+        R = R_proto * measurement_var
         reading = sim.read(R)
         tracker.predict(cmd)
         tracker.update(reading[:, 0])
@@ -195,8 +197,6 @@ def run_tracker(dummy):
     errors = perform_estimation(residuals[skip_initial:], tracker,
                                 map_estimate, map_estimate_convergence)
     # plot_results(readings, filtered, truths, Ps)
-    if np.max(errors) > 1 :
-        print("MAXERROR %.6f", np.max(errors))
     return errors
 
 

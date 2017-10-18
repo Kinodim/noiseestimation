@@ -16,7 +16,6 @@ from noiseestimation.estimation import (
 )
 
 # parameters
-runs = 400
 skip_initial = 100
 num_samples = 300
 used_taps = num_samples / 2
@@ -28,7 +27,7 @@ var_heading = Q * 0.1
 R_proto = np.array([[1, 0.1],
                     [0.1, 1.5]])
 filter_misestimation_factor = 1
-map_b = 0.9995
+map_b = 0.9999
 
 turning_threshold_angle = 0.001
 wheelbase = 1
@@ -83,8 +82,6 @@ def setup():
     tracker = UKF(dim_x=3, dim_z=2, fx=f, hx=h, dt=dt, points=sigmas)
     tracker.Q = np.diag((var_pos, var_pos, var_heading))
     tracker.R = R_proto * measurement_var * filter_misestimation_factor
-    tracker.R = np.asarray([[1, 0],
-                            [0, 1.5]]) * measurement_var * filter_misestimation_factor
     tracker.x = np.array([0, 0, 0])
     tracker.P = np.eye(3) * 500
 
@@ -141,24 +138,22 @@ def perform_estimation(residuals, tracker,
     R_map = map_estimate
     R_map_conv = map_estimate_convergence
     truth = R_proto * measurement_var
+    truth_norm = matrix_error(truth, 0)
     error_ml = matrix_error(R_ml, truth)
     error_scaled = matrix_error(R_scaled, truth)
     error_map = matrix_error(R_map, truth)
     error_map_conv = matrix_error(R_map_conv, truth)
-
-    # truth_norm = matrix_error(truth, 0)
-    # print("Truth")
-    # print(truth)
-    # print("ML:")
-    # print("", R_ml)
-    # print("\tRelative error: %.6f" % (error_ml / truth_norm))
-    # print("Scaled:")
-    # print("", R_scaled)
-    # print("\tRelative error: %.6f" % (error_scaled / truth_norm))
-    # print("MAP:")
-    # print("", R_map)
-    # print("\tRelative error: %.6f" % (error_map / truth_norm))
-
+    print("Truth")
+    print(truth)
+    print("ML:")
+    print("", R_ml)
+    print("\tRelative error: %.6f" % (error_ml / truth_norm))
+    print("Scaled:")
+    print("", R_scaled)
+    print("\tRelative error: %.6f" % (error_scaled / truth_norm))
+    print("MAP:")
+    print("", R_map)
+    print("\tRelative error: %.6f" % (error_map / truth_norm))
     return error_ml, error_scaled, error_map, error_map_conv
 
 
@@ -195,38 +190,8 @@ def run_tracker(dummy):
     errors = perform_estimation(residuals[skip_initial:], tracker,
                                 map_estimate, map_estimate_convergence)
     # plot_results(readings, filtered, truths, Ps)
-    if np.max(errors) > 1 :
-        print("MAXERROR %.6f", np.max(errors))
     return errors
 
 
 if __name__ == "__main__":
-    pool = Pool(8)
-    args = [0] * runs
-    pbar = tqdm.tqdm(total=runs)
-    errors_arr = []
-    for errors in pool.imap_unordered(run_tracker, args, chunksize=2):
-        pbar.update()
-        errors_arr.append(errors)
-    pbar.close()
-    pool.close()
-    pool.join()
-
-    errors_arr = np.asarray(errors_arr)
-    avg_errors = np.sum(errors_arr, axis=0) / float(runs)
-    R_norm = matrix_error(R_proto * measurement_var, 0)
-    rel_errors = avg_errors / R_norm
-    # ddof = 1 assures an unbiased estimate
-    # variances = np.var(errors_arr, axis=0, ddof=1)
-    print("-" * 20)
-    print("Max Error:")
-    print("\t", np.max(errors_arr))
-    print("ML estimation:")
-    print("\tAverage Error: %.6f" % avg_errors[0])
-    print("\tRelative Error: %.6f" % rel_errors[0])
-    print("Scaled estimation:")
-    print("\tAverage Error: %.6f" % avg_errors[1])
-    print("\tRelative Error: %.6f" % rel_errors[1])
-    print("MAP estimation:")
-    print("\tAverage Error: %.6f" % avg_errors[2])
-    print("\tRelative Error: %.6f" % rel_errors[2])
+    errors = run_tracker(0)
