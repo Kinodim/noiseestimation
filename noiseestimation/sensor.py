@@ -14,6 +14,7 @@ class Sensor:
         self.x = x0
         self.f = f
         self.h = h
+        rnd.seed()
 
     def step(self, *f_args):
         """Advances state according to transition function

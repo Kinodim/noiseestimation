@@ -24,6 +24,7 @@ class PlaybackSensor:
             self.control_fields = [control_fields]
         self.index = 0
         self.__read_data(data_filename)
+        rnd.seed()
 
     def read(self, R=[[0]]):
         """Outputs the current data entry
