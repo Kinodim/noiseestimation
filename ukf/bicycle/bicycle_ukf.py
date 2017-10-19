@@ -53,7 +53,7 @@ class BicycleUKF(UKF):
     # Sigma points parameters
     alpha = 1e-1
     beta = 2.
-    kappa = 0.1
+    kappa = 0.
 
     def __init__(self, dt):
         """Derives the UKF class to implement the specific
@@ -93,4 +93,38 @@ class BicycleUKF(UKF):
             beta*self.dt*(-self.c_h*self.l_h + self.c_v*self.l_v)/self.J + \
             self.c_v*delta*self.dt*self.l_v/self.J
         res[2] = a*self.dt + v
+        return res
+
+class BicycleUKFBias(BicycleUKF):
+    def __init__(self, dt):
+        self.dt = dt
+        H = np.array([[0, 1, 0, 1],
+                      [0, 0, 1, 0]])
+
+        def h(x):
+            return np.dot(H, x)
+
+        sigmas = MerweScaledSigmaPoints(4, alpha=self.alpha, beta=self.beta,
+                                        kappa=self.kappa)
+        UKF.__init__(self, dim_x=4, dim_z=2,
+                     fx=self.f_xu, hx=h, dt=dt, points=sigmas)
+
+    def f_xu(self, x, dt, u):
+        beta = x[0]
+        psi_d = x[1]
+        v = x[2]
+        delta = steering_to_wheel_angle(u[0, 0])
+        a = u[1, 0]
+
+        res = np.zeros((4))
+        res[0] = beta*(-self.dt*(self.c_h + self.c_v)/(self.m*v) + 1) + \
+            self.c_v*delta*self.dt/(self.m*v) - \
+            self.dt*psi_d*(1 + (-self.c_h*self.l_h + self.c_v*self.l_v)
+                           / (self.m * v**2))
+        res[1] = psi_d*(1 - self.dt*(self.c_h*self.l_h**2 +
+                                     self.c_v*self.l_v**2)/(self.J*v)) - \
+            beta*self.dt*(-self.c_h*self.l_h + self.c_v*self.l_v)/self.J + \
+            self.c_v*delta*self.dt*self.l_v/self.J
+        res[2] = a*self.dt + v
+        res[3] = x[3]
         return res
