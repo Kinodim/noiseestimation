@@ -56,6 +56,7 @@ def iterate_dir(dirname):
 def read_dirs(dirnames):
     res = iterate_dir(dirnames[0])
 
+    # merge other files assuming same order and timestamps
     for dirname in dirnames[1:]:
         contents = iterate_dir(dirname)
         for idx, entry in enumerate(res):
