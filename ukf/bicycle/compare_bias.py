@@ -15,7 +15,7 @@ from noiseestimation.estimation import (
 
 # parameters
 runs = 100
-skip_samples = 500
+skip_samples = 300
 sample_size = 300
 used_taps = sample_size / 2
 
@@ -39,11 +39,11 @@ def setup():
     # set up kalman filter
     tracker = BicycleUKFBias(dt)
     Q_factor = np.array(5e-7)
-    tracker.Q = np.diag([1, 1, 1, 1e-5] * Q_factor)
+    tracker.Q = np.diag([1, 1, 1, 1e-11] * Q_factor)
     tracker.R = R_proto * (sim_var + measurement_var) * filter_misestimation_factor
-    tracker.x = np.array([0, 0, 1, 0]).T
+    tracker.x = np.array([0, 0, 1, 0.35 * np.pi / 180]).T
     tracker.P = np.eye(4) * 1e0
-    tracker.P[3, 3] = 1e-4
+    tracker.P[3, 3] = 1e-8
 
     return sim, tracker
 

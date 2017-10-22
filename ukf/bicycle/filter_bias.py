@@ -13,7 +13,7 @@ R_proto = np.array([[1, 0],
                     [0, 3]])
 sim_var = 1e-3
 # num_samples = skip_samples + 1600
-num_samples = 11670
+num_samples = 11670 / 3
 dt = 0.01
 
 
@@ -24,10 +24,11 @@ def setup():
     # set up kalman filter
     tracker = BicycleUKFBias(dt)
     Q_factor = np.array(1e-6)
-    tracker.Q = np.diag([1, 1, 1, 0.0001] * Q_factor)
+    tracker.Q = np.diag([1, 1, 1, 1e-11] * Q_factor)
     tracker.R = R_proto * (sim_var + measurement_var) * 1
-    tracker.x = np.array([0, 0, 1, 0]).T
+    tracker.x = np.array([0, 0, 1, 0.3*np.pi/180]).T
     tracker.P = np.eye(4) * 1e0
+    tracker.P[3, 3] = 1e-8
 
     return sim, tracker
 
