@@ -18,7 +18,7 @@ dt = 0.01
 def setup():
     sim = PlaybackSensor("data/vehicle_state_adenauer.json",
                          fields=["fYawrate", "fVx"],
-                         control_fields=["fStWheelRate", "fAx"])
+                         control_fields=["fStwAng", "fAx"])
     # set up kalman filter
     tracker = BicycleUKF(dt)
     Q_factor = np.array(1e-5)
