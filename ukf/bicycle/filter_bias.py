@@ -24,11 +24,11 @@ def setup():
     # set up kalman filter
     tracker = BicycleUKFBias(dt)
     Q_factor = np.array(1e-6)
-    tracker.Q = np.diag([1, 1, 1, 1e-11] * Q_factor)
+    tracker.Q = np.diag([1, 1, 1, 1e-6] * Q_factor)
     tracker.R = R_proto * (sim_var + measurement_var) * 1
-    tracker.x = np.array([0, 0, 1, 0.3*np.pi/180]).T
+    tracker.x = np.array([0, 0, 1, 1*np.pi/180]).T
     tracker.P = np.eye(4) * 1e0
-    tracker.P[3, 3] = 1e-8
+    tracker.P[3, 3] = 1e-3
 
     return sim, tracker
 
@@ -69,7 +69,7 @@ def filtering(sim, tracker):
 
 def plot_results(readings, filtered, Ps):
     plot_filtered_values(readings, filtered, Ps)
-    plot_position(readings, filtered)
+    # plot_position(readings, filtered)
 
 
 def plot_filtered_values(readings, filtered, Ps):
@@ -91,8 +91,13 @@ def plot_filtered_values(readings, filtered, Ps):
         'kx'
     )
     axarr[1, 0].plot(
+        # filtered[:, 1] * 180.0 / np.pi,
+        (filtered[:, 1] + filtered[:, 3]) * 180.0 / np.pi,
+        'r-', label="with bias")
+    axarr[1, 0].plot(
         filtered[:, 1] * 180.0 / np.pi,
-        'r-')
+        '-', label="no bias")
+    axarr[1, 0].legend(loc="upper right")
     axarr[1, 1].set_title("Geschaetze Varianz der Gierrate")
     axarr[1, 1].plot(
         Ps[:, 1, 1]
