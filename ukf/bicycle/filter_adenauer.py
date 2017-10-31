@@ -10,8 +10,8 @@ measurement_var = 5e-6
 R_proto = np.array([[1, 0],
                     [0, 1]])
 sim_var = 1e-6
-num_samples = 50000
-# num_samples = 11670
+num_samples = 57490
+# num_samples = 6000
 dt = 0.01
 
 
@@ -107,7 +107,9 @@ def plot_filtered_values(readings, filtered, Ps):
 
 def plot_position(readings, filtered):
     # skip last value in loops
+    initial_yaw = 100 * np.pi / 180
     yaw_angles = [0] * len(filtered)
+    yaw_angles[0] = initial_yaw
     for idx, yawrate in enumerate(filtered[:-1, 1, 0]):
         yaw_angles[idx + 1] = yaw_angles[idx] + dt * yawrate
 
