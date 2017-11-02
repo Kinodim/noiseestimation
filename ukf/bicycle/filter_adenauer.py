@@ -111,6 +111,7 @@ def plot_position(readings, filtered):
     yaw_angles = [0] * len(filtered)
     yaw_angles[0] = initial_yaw
     for idx, yawrate in enumerate(filtered[:-1, 1, 0]):
+        yawrate -= 0.003 # remove bias
         yaw_angles[idx + 1] = yaw_angles[idx] + dt * yawrate
 
     positions = np.zeros((len(filtered), 2))
