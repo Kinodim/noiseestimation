@@ -25,6 +25,9 @@ vel_threshold = 0.3
 
 dt = 0.0005
 
+def matrix_error(estimate, truth):
+    return np.sqrt(np.sum(np.square(truth - estimate)))
+
 
 def setup():
     sim = PlaybackSensor("data/vehicle_state.json",
@@ -248,6 +251,10 @@ def run_tracker():
     Rs = np.asarray(Rs)
     Rs_estimated = np.asarray(Rs_estimated)
     truths = np.asarray(truths)
+
+    final_rel_error = matrix_error(Rs[-1], truths[-1]) / \
+        matrix_error(truths[-1], 0)
+    print("Final relative error %.6f %%" % (final_rel_error * 100))
 
     # plot_noise_matrices_with_data(Rs, Rs_estimated, R_proto * sim_var,
     #                               total_filtered, total_readings)
