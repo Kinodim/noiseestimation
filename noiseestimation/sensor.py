@@ -24,7 +24,7 @@ class Sensor:
         """
         self.x = self.f(self.x, *f_args)
 
-    def read(self, R, *h_args):
+    def read(self, R, *h_args, uniform=False):
         """Outputs readings according to measurement function
 
         Args:
@@ -34,7 +34,11 @@ class Sensor:
             ndarray: Measurement corrupted by noise
         """
         y = self.h(self.x, *h_args)
-        noise = rnd.multivariate_normal(np.zeros(len(R)), R).reshape(-1, 1)
+        if uniform:
+            interval = np.sqrt(12 * R[0][0])
+            noise = rnd.uniform(0, interval)
+        else:
+            noise = rnd.multivariate_normal(np.zeros(len(R)), R).reshape(-1, 1)
         return y + noise
 
 
