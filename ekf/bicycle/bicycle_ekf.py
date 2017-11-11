@@ -144,6 +144,7 @@ class BicycleEKF(BicycleEKF_noVel):
         self.dt = dt
         self.H = np.array([[0, 1, 0],
                            [0, 0, 1]])
+        self.Q = np.zeros((3,3))
 
     def predict(self, u=0):
         self.f_xu(u)
@@ -153,7 +154,8 @@ class BicycleEKF(BicycleEKF_noVel):
 
         # covariance of motion in control space
         M = np.diag((self.var_steer, self.var_acc))
-        self._P = np.dot(F, np.dot(self._P, F.T)) + np.dot(B, np.dot(M, B.T))
+        self._P = np.dot(F, np.dot(self._P, F.T)) + np.dot(B, np.dot(M, B.T)) \
+            + self.Q
 
     def update(self, z):
         z[1, 0] = max(self.minimum_velocity, z[1, 0])
