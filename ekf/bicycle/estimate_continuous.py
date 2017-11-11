@@ -21,7 +21,7 @@ average_coefficient = 0.2
 measurement_var = 5e-5
 R_proto = np.array([[1, 0],
                     [0, 3]])
-filter_misestimation_factor = 1
+filter_misestimation_factor = 2
 sim_var = 1e-3
 vel_threshold = 0.1
 
@@ -43,8 +43,10 @@ def setup():
     tracker.x = np.array([[0, 0, 1e-3]]).T
     tracker.P = np.eye(3) * 500
     # control not as accurate anymore
-    tracker.var_steer = var_steer
-    tracker.var_acc = var_acc
+    tracker.var_steer = 0
+    tracker.var_acc = 0
+    Q_factor = np.array(5e-7)
+    tracker.Q = np.diag([1, 1, 0.5] * Q_factor)
 
     return sim, tracker
 
@@ -266,9 +268,9 @@ def run_tracker():
     Rs_estimated = np.asarray(Rs_estimated)
     truths = np.asarray(truths)
 
-    # plot_noise_matrices_with_data(Rs, Rs_estimated, truths,
-    #                               total_filtered, total_readings)
-    plot_noise_matrices(Rs, Rs_estimated, truths)
+    plot_noise_matrices_with_data(Rs, Rs_estimated, truths,
+                                  total_filtered, total_readings)
+    # plot_noise_matrices(Rs, Rs_estimated, truths)
 
 
 if __name__ == "__main__":
