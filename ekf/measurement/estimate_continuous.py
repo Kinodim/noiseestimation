@@ -3,9 +3,9 @@ import numpy as np
 import math
 import copy
 from scipy.linalg import block_diag
-from filterpy.kalman import ExtendedKalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from matplotlib import pyplot as plt
+from noiseestimation.EKF import EstimationExtendedKalmanFilter as EKF
 from noiseestimation.sensor import Sensor
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (
@@ -77,7 +77,7 @@ def setup():
     sim = Sensor(x0, f, h)
 
     # set up kalman filter
-    tracker = ExtendedKalmanFilter(dim_x=3, dim_z=2)
+    tracker = EKF(dim_x=3, dim_z=2)
     tracker.F = F
     q_x = Q_discrete_white_noise(dim=2, dt=dt, var=Q_var)
     q_y = Q_var * 0.05* dt**2

@@ -1,4 +1,4 @@
-from filterpy.kalman import ExtendedKalmanFilter as EKF
+from noiseestimation.EKF import EstimationExtendedKalmanFilter as EKF
 import numpy as np
 import sys
 from math import sin, cos, tan
