@@ -1,12 +1,10 @@
 from __future__ import print_function
 import numpy as np
-import tqdm
 from copy import copy
-from multiprocessing import Pool
 from math import sin, tan, cos
 from matplotlib import pyplot as plt
 from filterpy.kalman import MerweScaledSigmaPoints
-from filterpy.kalman import UnscentedKalmanFilter as UKF
+from noiseestimation.UKF import EstimationUnscentedKalmanFilter as UKF
 from noiseestimation.sensor import Sensor
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import (

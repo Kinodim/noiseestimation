@@ -3,11 +3,11 @@ import numpy as np
 from copy import copy
 from math import sin, tan, cos
 from filterpy.kalman import MerweScaledSigmaPoints
-from filterpy.kalman import UnscentedKalmanFilter as UKF
 from matplotlib import pyplot as plt
 from noiseestimation.sensor import Sensor
 from noiseestimation.correlator import Correlator
 from noiseestimation.estimation import estimate_noise_ukf_scaling
+from noiseestimation.UKF import EstimationUnscentedKalmanFilter as UKF
 
 # parameters
 num_samples = 600
