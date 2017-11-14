@@ -1,6 +1,6 @@
 import numpy as np
 from filterpy.kalman import MerweScaledSigmaPoints
-from filterpy.kalman import UnscentedKalmanFilter as UKF
+from noiseestimation.UKF import EstimationUnscentedKalmanFilter as UKF
 
 
 def steering_to_wheel_angle(angle):
